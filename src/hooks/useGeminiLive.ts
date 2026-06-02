@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 // ── Tipos ─────────────────────────────────────────────────────────
 
-export type SessionState =
+type SessionState =
   | 'idle'        // sin sesión
   | 'connecting'  // abriendo WebSocket
   | 'ready'       // conectado, esperando
@@ -33,7 +33,7 @@ export interface TranscriptEntry {
   timestamp: Date
 }
 
-export interface UseGeminiLiveReturn {
+interface UseGeminiLiveReturn {
   state: SessionState
   transcript: TranscriptEntry[]
   currentText: string          // texto parcial en streaming

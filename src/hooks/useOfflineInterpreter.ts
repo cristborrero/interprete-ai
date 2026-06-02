@@ -27,7 +27,7 @@ type SpeechRecognition = any
 
 // ── Tipos ─────────────────────────────────────────────────────────
 
-export type OfflineState =
+type OfflineState =
   | 'idle'
   | 'loading'       // descargando modelos de traducción
   | 'ready'         // modelos cargados, esperando
@@ -35,12 +35,12 @@ export type OfflineState =
   | 'translating'   // traduciendo + sintetizando
   | 'error'
 
-export interface OfflineProgress {
+interface OfflineProgress {
   message: string
   percent: number
 }
 
-export interface UseOfflineInterpreterReturn {
+interface UseOfflineInterpreterReturn {
   state: OfflineState
   transcript: TranscriptEntry[]
   currentText: string

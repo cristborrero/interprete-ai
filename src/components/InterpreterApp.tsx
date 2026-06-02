@@ -29,7 +29,7 @@ import TranscriptPanel from '@/components/TranscriptPanel'
 import WaveformVisualizer from '@/components/WaveformVisualizer'
 import clsx from 'clsx'
 
-export interface FavoriteItem {
+interface FavoriteItem {
   id: string
   es: string
   en: string
