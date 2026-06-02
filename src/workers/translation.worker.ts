@@ -29,8 +29,10 @@ type WorkerResponse =
 
 // ── Estado del worker ─────────────────────────────────────────────
 
-let translatorEsEn: Awaited<ReturnType<typeof pipeline>> | null = null
-let translatorEnEs: Awaited<ReturnType<typeof pipeline>> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let translatorEsEn: any = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let translatorEnEs: any = null
 let isLoading = false
 
 function send(msg: WorkerResponse) {
