@@ -22,17 +22,17 @@ interface Props {
 const LANG_META: Record<string, { label: string; color: string; dot: string; border: string; bg: string }> = {
   es: { 
     label: 'Español', 
-    color: 'text-emerald-400', 
-    dot: 'bg-emerald-500', 
-    border: 'border-emerald-500/20', 
-    bg: 'bg-emerald-950/10' 
+    color: 'text-brand-orange-400', 
+    dot: 'bg-brand-orange-500', 
+    border: 'border-brand-orange-500/20', 
+    bg: 'bg-brand-orange-950/10' 
   },
   en: { 
     label: 'English', 
-    color: 'text-blue-400', 
-    dot: 'bg-blue-500', 
-    border: 'border-blue-500/20', 
-    bg: 'bg-blue-950/10' 
+    color: 'text-brand-red-400', 
+    dot: 'bg-brand-red-500', 
+    border: 'border-brand-red-500/20', 
+    bg: 'bg-brand-red-950/10' 
   },
 }
 
@@ -75,7 +75,7 @@ export default function TranscriptPanel({ entries, currentText, onClear }: Props
           <div className="flex flex-col items-center justify-center h-full gap-5 text-center py-12">
             <div className="relative w-16 h-16 rounded-2xl bg-surface-2 border border-border flex items-center justify-center shadow-premium">
               <span className="text-2xl animate-pulse">🎙️</span>
-              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-surface-1" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-brand-orange-500 border-2 border-surface-1" />
             </div>
             <div className="space-y-1.5 max-w-[280px]">
               <h4 className="text-[13px] font-semibold text-text-primary">
@@ -87,13 +87,13 @@ export default function TranscriptPanel({ entries, currentText, onClear }: Props
             </div>
             <div className="flex items-center gap-4 px-4 py-2 rounded-2xl bg-surface-2/40 border border-border/40 text-[11px] text-text-muted">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-orange-500" />
                 <span>Español</span>
               </div>
               <span className="opacity-40">|</span>
               <div className="flex items-center gap-1.5">
                 <span>English</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-red-500" />
               </div>
             </div>
           </div>

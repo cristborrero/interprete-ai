@@ -14,32 +14,30 @@ const config: Config = {
       },
       colors: {
         surface: {
-          DEFAULT: '#09090B', // Deepest Dark Zinc
-          1: '#121215',       // Panel/Card Dark
-          2: '#1A1A1E',       // Secondary Panel
-          3: '#222227',       // Control background
+          DEFAULT: '#000000', // Black
+          1: '#333333',       // Dark Gray
+          2: '#646464',       // Gray
+          3: '#C3C3C3',       // Light Gray
         },
         border: {
-          DEFAULT: '#1E1E22', // Elegant dark border
-          active: '#2A2A30',  // High contrast border
+          DEFAULT: '#333333', // Dark Gray
+          active: '#646464',  // Gray
         },
-        accent: {
-          es: '#10B981',   // Emerald green (Spanish)
-          en: '#3B82F6',   // Royal blue (English)
-          warn: '#F59E0B',  // Amber
-          muted: '#71717A',
+        brand: {
+          orange: '#FF600C',
+          red: '#FF1300',
         },
         text: {
-          primary: '#FAFAFA',
-          secondary: '#D4D4D8',
-          muted: '#A1A1AA',
+          primary: '#ffffff', // White
+          secondary: '#C3C3C3', // Light Gray
+          muted: '#646464', // Gray
         },
       },
       boxShadow: {
         'premium': '0 8px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
         'premium-hover': '0 12px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-        'glow-es': '0 0 40px -8px rgba(16, 185, 129, 0.28)',
-        'glow-en': '0 0 40px -8px rgba(59, 130, 246, 0.28)',
+        'glow-es': '0 0 40px -8px rgba(255, 96, 12, 0.28)', // Brand Orange
+        'glow-en': '0 0 40px -8px rgba(255, 19, 0, 0.28)', // Brand Red
       },
       animation: {
         'pulse-ring': 'pulse-ring 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite',
