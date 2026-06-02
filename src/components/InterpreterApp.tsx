@@ -181,14 +181,14 @@ export default function InterpreterApp() {
   }
 
   const orbBorder = isListening
-    ? 'border-brand-orange-500/40 bg-brand-orange-950/15 shadow-glow-es ring-4 ring-brand-orange-500/10'
+    ? 'border-brand-orange/40 bg-brand-orange/15 shadow-glow-es ring-4 ring-brand-orange/10'
     : isTranslating
-    ? 'border-brand-red-500/40 bg-brand-red-950/15 shadow-glow-en ring-4 ring-brand-red-500/10'
+    ? 'border-brand-red/40 bg-brand-red/15 shadow-glow-en ring-4 ring-brand-red/10'
     : isLoading
     ? 'border-amber-500/35 bg-amber-950/5 animate-pulse'
     : isActive
-    ? 'border-brand-orange-500/30 bg-surface-2/65 hover:border-brand-orange-500/50 hover:bg-surface-2 shadow-premium cursor-pointer'
-    : 'border-brand-orange-500/20 bg-surface-1/40 hover:border-brand-orange-500/40 hover:bg-surface-2 cursor-pointer shadow-premium animate-pulse'
+    ? 'border-brand-orange/30 bg-surface-2/65 hover:border-brand-orange/50 hover:bg-surface-2 shadow-premium cursor-pointer'
+    : 'border-brand-orange/20 bg-surface-1/40 hover:border-brand-orange/40 hover:bg-surface-2 cursor-pointer shadow-premium animate-pulse'
 
   const orbLabel = isListening ? 'Escuchando voz...'
     : isTranslating ? 'Traduciendo...'
@@ -196,8 +196,8 @@ export default function InterpreterApp() {
     : isActive ? (autoMode ? 'Detección automática activa' : 'Listo · Mantén presionado')
     : 'Haz clic para iniciar traducción'
 
-  const orbLabelColor = isListening ? 'text-brand-orange-400 font-semibold'
-    : isTranslating ? 'text-brand-red-400 font-semibold'
+  const orbLabelColor = isListening ? 'text-brand-orange font-semibold'
+    : isTranslating ? 'text-brand-red font-semibold'
     : isLoading ? 'text-amber-400'
     : isActive ? 'text-text-secondary'
     : 'text-text-muted hover:text-text-secondary transition-colors font-medium'
@@ -213,13 +213,13 @@ export default function InterpreterApp() {
           
           {/* Logo Corporativo */}
           <div className="flex items-center gap-3 px-1 justify-center lg:justify-start">
-            <svg className="w-6 h-6 text-brand-orange-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-6 h-6 text-brand-orange shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               <path d="M12 7v5" />
               <path d="M12 12a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
             </svg>
             <span className="hidden lg:block text-[14px] font-bold text-text-primary tracking-tight">
-              Intérprete<span className="text-brand-orange-400">AI</span>
+              Intérprete<span className="text-brand-orange">AI</span>
             </span>
           </div>
 
@@ -275,9 +275,9 @@ export default function InterpreterApp() {
           </nav>
 
           {/* Premium Pro Box — solo visible en desktop */}
-          <div className="hidden lg:block p-4 rounded-2xl border border-brand-orange-500/10 bg-brand-orange-950/5 space-y-3">
+          <div className="hidden lg:block p-4 rounded-2xl border border-brand-orange/10 bg-brand-orange/5 space-y-3">
             <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-brand-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="w-4 h-4 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" />
                 <path d="M3 20h18v2H3z" />
               </svg>
@@ -286,7 +286,7 @@ export default function InterpreterApp() {
             <p className="text-[9.5px] text-text-muted leading-relaxed">
               Traducciones ilimitadas, voz avanzada y más.
             </p>
-            <button className="w-full py-2 rounded-xl bg-brand-orange-500 text-surface text-[10.5px] font-bold hover:bg-brand-orange-400 transition-colors shadow-premium">
+            <button className="w-full py-2 rounded-xl bg-brand-orange text-surface text-[10.5px] font-bold hover:bg-brand-orange transition-colors shadow-premium">
               Mejorar plan
             </button>
           </div>
@@ -302,7 +302,7 @@ export default function InterpreterApp() {
               </svg>
               <span className="text-[11px] font-medium text-text-secondary">Modo oscuro</span>
             </div>
-            <span className="text-[10px] text-brand-orange-400 font-semibold uppercase tracking-wider">
+            <span className="text-[10px] text-brand-orange font-semibold uppercase tracking-wider">
               Activado
             </span>
           </div>
@@ -334,7 +334,7 @@ export default function InterpreterApp() {
         {/* Mobile logo — only rendered inside header on mobile */}
         <header className="flex items-center justify-between px-4 md:px-8 py-3 md:py-5 border-b border-border shrink-0 select-none">
           <div className="flex md:hidden items-center gap-2">
-            <svg className="w-5 h-5 text-brand-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-5 h-5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
             <span className="text-[13px] font-bold text-text-primary">IntérpreteAI</span>
@@ -347,14 +347,14 @@ export default function InterpreterApp() {
               >
                 {offlineMode ? (
                   <>
-                    <svg className="w-3.5 h-3.5 text-brand-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="w-3.5 h-3.5 text-brand-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-1.2 1.3L11 12l-4 4H4v3h3l4-4 4.5 7.4a1 1 0 0 0 1.8-.2Z" />
                     </svg>
                     <span>Modo local</span>
                   </>
                 ) : (
                   <>
-                    <svg className="w-3.5 h-3.5 text-brand-orange-400 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="w-3.5 h-3.5 text-brand-orange animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="2" y1="12" x2="22" y2="12" />
                       <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -384,7 +384,7 @@ export default function InterpreterApp() {
             <div className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1.5 rounded-full border border-border bg-surface-1/40">
               <span className={clsx(
                 'w-1.5 h-1.5 rounded-full',
-                isActive ? 'bg-brand-orange-500 animate-pulse' : 'bg-text-muted/40'
+                isActive ? 'bg-brand-orange animate-pulse' : 'bg-text-muted/40'
               )} />
               <span className="text-[10px] md:text-[10.5px] font-semibold text-text-secondary">
                 {isActive ? 'En línea' : 'Desconectado'}
@@ -393,9 +393,9 @@ export default function InterpreterApp() {
 
             {/* Selector de idiomas */}
             <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold tracking-wider px-3.5 py-1.5 rounded-xl bg-surface-2/40 border border-border/80">
-              <span className="text-brand-orange-400">ES</span>
+              <span className="text-brand-orange">ES</span>
               <span className="opacity-30">↔</span>
-              <span className="text-brand-red-400">EN</span>
+              <span className="text-brand-red">EN</span>
             </div>
           </div>
         </header>
@@ -464,7 +464,7 @@ export default function InterpreterApp() {
                   )}
                 >
                   {isListening && (
-                    <span className="absolute inset-0 rounded-full border border-brand-orange-500/25 pulse-ring" />
+                    <span className="absolute inset-0 rounded-full border border-brand-orange/25 pulse-ring" />
                   )}
                   <MicIcon size={22} active={isListening || isActive} translating={isTranslating} />
                 </button>
@@ -481,7 +481,7 @@ export default function InterpreterApp() {
                     isActive && 'opacity-40 cursor-not-allowed'
                   )}
                 >
-                  <svg className="w-4 h-4 md:w-5 md:h-5 text-brand-orange-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="w-4 h-4 md:w-5 md:h-5 text-brand-orange shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
                   </svg>
                   <div className="flex flex-col">
@@ -494,7 +494,7 @@ export default function InterpreterApp() {
 
               {/* Caja de Consejo / Estado del Orb */}
               <div className="flex items-center gap-2.5 justify-center py-1 select-none">
-                <svg className="w-4 h-4 text-brand-orange-400 shrink-0 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="w-4 h-4 text-brand-orange shrink-0 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
                 </svg>
                 <span className={clsx('text-[11px] font-medium transition-colors', orbLabelColor)}>
@@ -503,7 +503,7 @@ export default function InterpreterApp() {
                 {(isListening || isTranslating) && (
                   <WaveformVisualizer
                     active={true}
-                    color={isListening ? 'bg-brand-orange-500' : 'bg-brand-red-500'}
+                    color={isListening ? 'bg-brand-orange' : 'bg-brand-red'}
                     barCount={5}
                   />
                 )}
@@ -516,7 +516,7 @@ export default function InterpreterApp() {
                 <div className="flex flex-col rounded-3xl border border-border bg-surface-1 shadow-premium overflow-hidden transition-all duration-200 focus-within:border-border-active">
                   <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0 bg-surface-1/50 backdrop-blur-md">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-brand-orange-500 shrink-0 animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-brand-orange shrink-0 animate-pulse" />
                       <span className="text-[11.5px] font-bold text-text-primary uppercase tracking-wider">Español</span>
                       <svg className="w-3.5 h-3.5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="m6 9 6 6 6-6" />
@@ -545,7 +545,7 @@ export default function InterpreterApp() {
                         {esInput.trim() && (
                           <button
                             onClick={() => handleTranslateText(esInput, 'es')}
-                            className="px-3 py-1.5 rounded-xl bg-brand-orange-500 hover:bg-brand-orange-400 text-surface text-[10px] font-bold transition-all shadow-sm"
+                            className="px-3 py-1.5 rounded-xl bg-brand-orange hover:bg-brand-orange text-surface text-[10px] font-bold transition-all shadow-sm"
                           >
                             Traducir
                           </button>
@@ -572,7 +572,7 @@ export default function InterpreterApp() {
                 <div className="flex flex-col rounded-3xl border border-border bg-surface-1 shadow-premium overflow-hidden transition-all duration-200 focus-within:border-border-active">
                   <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0 bg-surface-1/50 backdrop-blur-md">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-brand-red-500 shrink-0 animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-brand-red shrink-0 animate-pulse" />
                       <span className="text-[11.5px] font-bold text-text-primary uppercase tracking-wider">English</span>
                       <svg className="w-3.5 h-3.5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="m6 9 6 6 6-6" />
@@ -606,7 +606,7 @@ export default function InterpreterApp() {
                         {enInput.trim() && (
                           <button
                             onClick={() => handleTranslateText(enInput, 'en')}
-                            className="px-3 py-1.5 rounded-xl bg-brand-red-500 hover:bg-brand-red-400 text-surface text-[10px] font-bold transition-all shadow-sm"
+                            className="px-3 py-1.5 rounded-xl bg-brand-red hover:bg-brand-red text-surface text-[10px] font-bold transition-all shadow-sm"
                           >
                             Translate
                           </button>
@@ -627,7 +627,7 @@ export default function InterpreterApp() {
                   </div>
                   <div className="h-1 bg-surface-2 rounded-full overflow-hidden border border-border/20">
                     <div
-                      className="h-full bg-brand-red-500 rounded-full transition-all duration-300"
+                      className="h-full bg-brand-red rounded-full transition-all duration-300"
                       style={{ width: `${progress.percent}%` }}
                     />
                   </div>
@@ -640,7 +640,7 @@ export default function InterpreterApp() {
                   title="Traducción en tiempo real"
                   desc="Resultados instantáneos y precisos."
                   icon={
-                    <svg className="w-5 h-5 text-brand-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="w-5 h-5 text-brand-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                     </svg>
                   }
@@ -649,7 +649,7 @@ export default function InterpreterApp() {
                   title="Soporte multiidioma"
                   desc="Más de 100 idiomas disponibles."
                   icon={
-                    <svg className="w-5 h-5 text-brand-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="w-5 h-5 text-brand-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="2" y1="12" x2="22" y2="12" />
                       <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -679,7 +679,7 @@ export default function InterpreterApp() {
               </div>
 
               {/* Banner de Login en el Fondo */}
-              <div className="rounded-2xl border border-brand-orange-500/10 bg-brand-orange-950/5 p-6 flex flex-col md:flex-row items-center justify-between gap-4 select-none">
+              <div className="rounded-2xl border border-brand-orange/10 bg-brand-orange/5 p-6 flex flex-col md:flex-row items-center justify-between gap-4 select-none">
                 <span className="text-[11.5px] text-text-secondary text-center md:text-left font-medium leading-relaxed">
                   Inicia sesión para guardar tu historial, favoritos y sincronizar en todos tus dispositivos.
                 </span>
@@ -782,7 +782,7 @@ export default function InterpreterApp() {
                         step="0.05"
                         value={ttsRate}
                         onChange={(e) => setTtsRate(parseFloat(e.target.value))}
-                        className="w-full h-1 bg-surface-2 rounded-lg appearance-none cursor-pointer accent-brand-orange-400"
+                        className="w-full h-1 bg-surface-2 rounded-lg appearance-none cursor-pointer accent-brand-orange"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -794,7 +794,7 @@ export default function InterpreterApp() {
                         step="0.1"
                         value={ttsVolume}
                         onChange={(e) => setTtsVolume(parseFloat(e.target.value))}
-                        className="w-full h-1 bg-surface-2 rounded-lg appearance-none cursor-pointer accent-brand-orange-400"
+                        className="w-full h-1 bg-surface-2 rounded-lg appearance-none cursor-pointer accent-brand-orange"
                       />
                     </div>
                   </div>
@@ -819,7 +819,7 @@ export default function InterpreterApp() {
             onClick={() => setActiveTab(key)}
             className={clsx(
               'flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all min-w-[60px]',
-              activeTab === key ? 'text-brand-orange-400' : 'text-text-muted'
+              activeTab === key ? 'text-brand-orange' : 'text-text-muted'
             )}
           >
             {key === 'traductor' && (
@@ -868,7 +868,7 @@ function SidebarTab({
           : 'bg-transparent border-transparent text-text-muted hover:text-text-secondary hover:bg-surface-1/30'
       )}
     >
-      <div className={clsx('shrink-0 transition-colors', active ? 'text-brand-orange-400' : 'text-text-muted')}>
+      <div className={clsx('shrink-0 transition-colors', active ? 'text-brand-orange' : 'text-text-muted')}>
         {icon}
       </div>
       <div className="flex flex-col select-none">
@@ -930,7 +930,7 @@ function CopyButton({ text }: { text: string }) {
       className="p-2.5 rounded-xl border border-border bg-surface-2/30 hover:border-border-active hover:bg-surface-2 transition-all shadow-sm"
     >
       {copied ? (
-        <svg className="w-3.5 h-3.5 text-brand-orange-400 transition-colors animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-3.5 h-3.5 text-brand-orange transition-colors animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12" />
         </svg>
       ) : (
@@ -953,7 +953,7 @@ function BookmarkButton({ active, onClick, disabled }: { active: boolean; onClic
         disabled && 'opacity-40 cursor-not-allowed'
       )}
     >
-      <svg className={clsx('w-3.5 h-3.5 transition-colors cursor-pointer', active ? 'text-brand-orange-400 fill-brand-orange-400/25' : 'text-text-muted hover:text-text-primary')} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className={clsx('w-3.5 h-3.5 transition-colors cursor-pointer', active ? 'text-brand-orange fill-brand-orange/25' : 'text-text-muted hover:text-text-primary')} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
       </svg>
     </button>
@@ -973,7 +973,7 @@ function GlosarioCompletoItem({ en, es, onRemove }: { en: string; es: string; on
           onClick={onRemove}
           className="p-2 rounded-xl border border-border bg-surface-2/45 opacity-60 group-hover:opacity-100 hover:border-border-active hover:bg-surface-2 transition-all"
         >
-          <svg className="w-3.5 h-3.5 text-brand-orange-400 fill-brand-orange-400/10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="w-3.5 h-3.5 text-brand-orange fill-brand-orange/10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
         </button>
@@ -999,7 +999,7 @@ function MicIcon({ size = 24, active, translating }: {
       strokeLinejoin="round"
       className={clsx(
         'transition-all duration-300',
-        active ? 'text-brand-orange-400 scale-110' : translating ? 'text-brand-red-400' : 'text-text-muted',
+        active ? 'text-brand-orange scale-110' : translating ? 'text-brand-red' : 'text-text-muted',
       )}
     >
       <rect x="9" y="2" width="6" height="11" rx="3" />
