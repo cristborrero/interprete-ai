@@ -155,7 +155,7 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
     )
     workerRef.current = worker
 
-    worker.onmessage = (e) => {
+    worker.onmessage = (e: MessageEvent) => {
       const msg = e.data
 
       switch (msg.type) {
@@ -202,7 +202,7 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
       }
     }
 
-    worker.onerror = (e) => {
+    worker.onerror = (e: ErrorEvent) => {
       setError(`Error en el worker de traducción: ${e.message}`)
       setState('error')
     }
@@ -232,7 +232,7 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
     r.interimResults = true
     r.maxAlternatives = 1
 
-    r.onresult = (e) => {
+    r.onresult = (e: any) => {
       const result = e.results[e.results.length - 1]
       const text = result[0].transcript.trim()
 
@@ -272,7 +272,7 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
       }
     }
 
-    r.onerror = (e) => {
+    r.onerror = (e: any) => {
       if (e.error === 'no-speech') return // silencio → ignorar
       if (e.error === 'aborted') return   // detenido manualmente
       setError(`Error de reconocimiento: ${e.error}`)

@@ -268,7 +268,7 @@ export function useGeminiLive(): UseGeminiLiveReturn {
         sessionActiveRef.current = false
       }
 
-      ws.onclose = (ev) => {
+      ws.onclose = (ev: CloseEvent) => {
         sessionActiveRef.current = false
         if (state !== 'idle') {
           setState('idle')
@@ -335,7 +335,7 @@ export function useGeminiLive(): UseGeminiLiveReturn {
       const processor = ctx.createScriptProcessor(4096, 1, 1)
       processorRef.current = processor
 
-      processor.onaudioprocess = (e) => {
+      processor.onaudioprocess = (e: AudioProcessingEvent) => {
         if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
 
         const float32 = e.inputBuffer.getChannelData(0)
