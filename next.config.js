@@ -5,8 +5,11 @@ const nextConfig = {
   // Transformers.js corre en el browser — no bundlear en el servidor
   serverExternalPackages: ['@huggingface/transformers'],
 
-  // Next.js 16 usa Turbopack por defecto; maneja WASM y node fallbacks nativamente
-  turbopack: {},
+  // Webpack: soporte estable para new Worker(new URL(..., import.meta.url))
+  // Turbopack tiene soporte limitado para Workers con import.meta.url
+  webpack(config) {
+    return config
+  },
 
   async headers() {
     return [
