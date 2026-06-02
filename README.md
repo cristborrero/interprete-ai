@@ -1,5 +1,15 @@
 # IntérpreteAI ── Traductor Simultáneo Premium
 
+<div align="center">
+
+[![Stars](https://img.shields.io/github/stars/cristborrero/interprete-ai?style=for-the-badge&logo=github&color=34d399&logoColor=white)](https://github.com/cristborrero/interprete-ai/stargazers)
+[![License](https://img.shields.io/github/license/cristborrero/interprete-ai?style=for-the-badge&color=60a5fa)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-007acc?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+
+</div>
+
 IntérpreteAI es un sistema de interpretación simultánea bidireccional Español ↔ English en tiempo real, diseñado con un estándar visual premium y optimizado para entornos profesionales y de salud. Combina la potencia del procesamiento en la nube con la flexibilidad del procesamiento local (offline).
 
 ---
