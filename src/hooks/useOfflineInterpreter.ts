@@ -1,43 +1,25 @@
-/**
- * useOfflineInterpreter.ts
- * ─────────────────────────────────────────────────────────────────
- * Hook para interpretación ES ↔ EN 100% offline:
- *
- * STT:  Web Speech API (SpeechRecognition nativa del browser/SO)
- * MT:   OPUS-MT via Transformers.js en un Web Worker (Helsinki-NLP)
- * TTS:  SpeechSynthesis nativa del browser/SO
- *
- * Primera carga: descarga ~150MB de modelos (se cachean en IndexedDB)
- * Cargas siguientes: completamente offline, sin red.
- * ─────────────────────────────────────────────────────────────────
- */
+import { useState, useEffect, useRef, useCallback } from 'react'
 
-'use client'
+type Language = 'es' | 'en'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { TranscriptEntry, Language } from './useGeminiLive'
-
-// Interfaz extendida de Window para cubrir Web Speech API y su prefijo webkit
-/* eslint-disable @typescript-eslint/no-explicit-any */
-interface SpeechAwareWindow extends Window {
-  SpeechRecognition?: new () => any
-  webkitSpeechRecognition?: new () => any
-}
-type SpeechRecognition = any
-
-// ── Tipos ─────────────────────────────────────────────────────────
-
-type OfflineState =
-  | 'idle'
-  | 'loading'       // descargando modelos de traducción
-  | 'ready'         // modelos cargados, esperando
-  | 'listening'     // reconociendo voz
-  | 'translating'   // traduciendo + sintetizando
-  | 'error'
+type OfflineState = 'idle' | 'loading' | 'ready' | 'listening' | 'translating' | 'error'
 
 interface OfflineProgress {
   message: string
   percent: number
+}
+
+interface TranscriptEntry {
+  id: string
+  role: 'user' | 'assistant'
+  text: string
+  lang: Language
+  timestamp: Date
+}
+
+interface SpeechAwareWindow extends Window {
+  SpeechRecognition?: any
+  webkitSpeechRecognition?: any
 }
 
 interface UseOfflineInterpreterReturn {
@@ -86,12 +68,19 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
   const [ttsVolume, setTtsVolumeState] = useState(1.0)
 
   const workerRef = useRef<Worker | null>(null)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const ttsWorkerRef = useRef<Worker | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const currentAudioSourceRef = useRef<AudioBufferSourceNode | null>(null)
+  
+  const recognitionRef = useRef<any>(null)
   const sessionActiveRef = useRef(false)
   const autoModeRef = useRef(false)
   const pendingTranslations = useRef<Map<string, Language>>(new Map())
 
+  const mtLoadedRef = useRef(false)
+  const ttsLoadedRef = useRef(false)
   const loadedRef = useRef(false)
+  
   const ttsRateRef = useRef(0.95)
   const ttsVolumeRef = useRef(1.0)
 
@@ -110,45 +99,41 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
     setAutoModeState(v)
   }, [])
 
-  // ── TTS: sintetizar la traducción en voz ─────────────────────
+  const checkAllLoaded = useCallback(() => {
+    if (mtLoadedRef.current && ttsLoadedRef.current) {
+      loadedRef.current = true
+      setState('ready')
+      setProgress({ message: 'Listo — motores IA cargados', percent: 100 })
+    }
+  }, [])
+
+  // ── TTS: sintetizar la traducción en voz (Kokoro-82M) ──────────────
 
   const speak = useCallback((text: string, lang: Language) => {
     if (typeof window === 'undefined') return
-    const utter = new SpeechSynthesisUtterance(text)
-    utter.lang = lang === 'es' ? 'es-ES' : 'en-GB'
-    utter.rate = ttsRateRef.current
-    utter.volume = ttsVolumeRef.current
-    utter.pitch = 1.0
-
-    // Intentar encontrar una voz nativa del SO para el idioma
-    const voices = window.speechSynthesis.getVoices()
-    const match = voices.find(v => v.lang.startsWith(lang === 'es' ? 'es' : 'en') && v.localService)
-    if (match) utter.voice = match
-
-    utter.onend = () => {
-      if (sessionActiveRef.current) {
-        setState(autoModeRef.current ? 'listening' : 'ready')
-        // En auto mode, reiniciar el reconocimiento inmediatamente
-        if (autoModeRef.current && recognitionRef.current) {
-          try { recognitionRef.current.start() } catch { /* ya iniciado */ }
-        }
-      }
-    }
-
-    utter.onerror = () => {
-      if (sessionActiveRef.current) setState('ready')
-    }
+    if (!ttsWorkerRef.current) return
 
     setState('translating')
-    window.speechSynthesis.cancel() // cancelar cualquier TTS previo
-    window.speechSynthesis.speak(utter)
+
+    if (currentAudioSourceRef.current) {
+      try { currentAudioSourceRef.current.stop() } catch {}
+      currentAudioSourceRef.current.disconnect()
+      currentAudioSourceRef.current = null
+    }
+
+    ttsWorkerRef.current.postMessage({
+      action: 'speak',
+      text,
+      voice: lang === 'es' ? 'ef_dora' : 'am_adam'
+    })
   }, [])
 
-  // ── Web Worker: inicializar y manejar mensajes ────────────────
+  // ── Web Workers: inicializar y manejar mensajes ────────────────
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    // Traductor (OPUS-MT)
     const worker = new Worker(
       new URL('../workers/translation.worker.ts', import.meta.url),
       { type: 'module' }
@@ -160,13 +145,15 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
 
       switch (msg.type) {
         case 'progress':
-          setProgress({ message: msg.message, percent: msg.percent ?? 0 })
+          // Solo mostramos progreso del traductor o podemos dividirlo
+          if (!mtLoadedRef.current) {
+            setProgress({ message: `Traductor: ${msg.message}`, percent: (msg.percent ?? 0) / 2 })
+          }
           break
 
         case 'loaded':
-          loadedRef.current = true
-          setState('ready')
-          setProgress({ message: 'Listo — modelos cargados localmente', percent: 100 })
+          mtLoadedRef.current = true
+          checkAllLoaded()
           break
 
         case 'result': {
@@ -188,13 +175,13 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
           setTranscript(prev => [...prev, entry])
           setCurrentText('')
 
-          // TTS: leer la traducción en voz alta
+          // TTS: leer la traducción en voz alta usando Kokoro
           speak(msg.text, targetLang)
           break
         }
 
         case 'error':
-          console.error('[OfflineInterpreter] Worker error:', msg.message)
+          console.error('[OfflineInterpreter] MT Worker error:', msg.message)
           if (!sessionActiveRef.current) return
           setError(msg.message)
           setState('error')
@@ -207,15 +194,77 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
       setState('error')
     }
 
+    // TTS (Kokoro-82M)
+    const ttsWorker = new Worker(
+      new URL('../workers/tts.worker.ts', import.meta.url),
+      { type: 'module' }
+    )
+    ttsWorkerRef.current = ttsWorker
+
+    ttsWorker.onmessage = (e: MessageEvent) => {
+      const msg = e.data
+      if (msg.status === 'ready') {
+        ttsLoadedRef.current = true
+        checkAllLoaded()
+      } else if (msg.status === 'complete') {
+        const audioData = msg.audioData
+        const sampleRate = msg.sampleRate
+        
+        if (!audioContextRef.current) {
+          const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+          audioContextRef.current = new AudioCtx()
+        }
+        const ctx = audioContextRef.current
+        if (ctx.state === 'suspended') ctx.resume()
+
+        const buffer = ctx.createBuffer(1, audioData.length, sampleRate)
+        buffer.getChannelData(0).set(audioData)
+        
+        const source = ctx.createBufferSource()
+        source.buffer = buffer
+        source.connect(ctx.destination)
+        currentAudioSourceRef.current = source
+
+        source.onended = () => {
+          if (sessionActiveRef.current) {
+            setState(autoModeRef.current ? 'listening' : 'ready')
+            if (autoModeRef.current && recognitionRef.current) {
+              try { recognitionRef.current.start() } catch { /* ya iniciado */ }
+            }
+          }
+        }
+        source.start()
+      } else if (msg.status === 'error') {
+        console.error('[OfflineInterpreter] TTS Worker error:', msg.error)
+        if (sessionActiveRef.current) setState('ready')
+      }
+    }
+    
+    ttsWorker.onerror = (e: ErrorEvent) => {
+      setError(`Error en el worker de TTS: ${e.message}`)
+      setState('error')
+    }
+
     return () => {
       worker.terminate()
       workerRef.current = null
+      ttsWorker.terminate()
+      ttsWorkerRef.current = null
+      
+      if (currentAudioSourceRef.current) {
+        try { currentAudioSourceRef.current.stop() } catch {}
+        currentAudioSourceRef.current.disconnect()
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close()
+        audioContextRef.current = null
+      }
     }
-  }, [speak])
+  }, [speak, checkAllLoaded])
 
   // ── SpeechRecognition: configurar ─────────────────────────────
 
-  const buildRecognition = useCallback((): SpeechRecognition | null => {
+  const buildRecognition = useCallback((): any | null => {
     if (typeof window === 'undefined') return null
 
     const w = window as SpeechAwareWindow
@@ -226,8 +275,7 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
     }
 
     const r = new SR()
-    // Sin lang fijo — detectamos el idioma con heurística después
-    r.lang = 'es-ES' // hint inicial; el usuario puede cambiar
+    r.lang = 'es-ES' // hint inicial
     r.continuous = false
     r.interimResults = true
     r.maxAlternatives = 1
@@ -242,7 +290,6 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
         const srcLang = detectLang(text)
         setDetectedLang(srcLang)
 
-        // Agregar al transcript lo que dijo el usuario
         const userEntry: TranscriptEntry = {
           id: `${Date.now()}-user`,
           role: 'user',
@@ -252,7 +299,6 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
         }
         setTranscript(prev => [...prev, userEntry])
 
-        // Enviar al worker para traducir
         const id = `${Date.now()}-${Math.random()}`
         const direction = srcLang === 'es' ? 'es-en' : 'en-es'
         pendingTranslations.current.set(id, srcLang)
@@ -264,7 +310,6 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
 
     r.onend = () => {
       if (!sessionActiveRef.current) return
-      // En modo auto y si no hay traducción activa, reiniciamos
       if (autoModeRef.current && state !== 'translating') {
         try { r.start() } catch { /* ya activo */ }
       } else if (!autoModeRef.current) {
@@ -273,8 +318,8 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
     }
 
     r.onerror = (e: any) => {
-      if (e.error === 'no-speech') return // silencio → ignorar
-      if (e.error === 'aborted') return   // detenido manualmente
+      if (e.error === 'no-speech') return
+      if (e.error === 'aborted') return
       setError(`Error de reconocimiento: ${e.error}`)
       setState('error')
     }
@@ -286,22 +331,35 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
   // ── Control de sesión ─────────────────────────────────────────
 
   const startSession = useCallback(() => {
-    if (!workerRef.current) return
+    if (!workerRef.current || !ttsWorkerRef.current) return
     sessionActiveRef.current = true
+    mtLoadedRef.current = false
+    ttsLoadedRef.current = false
     loadedRef.current = false
     setError(null)
     setState('loading')
-    setProgress({ message: 'Iniciando modelos de traducción…', percent: 0 })
+    setProgress({ message: 'Iniciando motores de IA (Traducción + Kokoro TTS)...', percent: 0 })
+    
+    // Iniciar ambos motores
     workerRef.current.postMessage({ type: 'load' })
+    ttsWorkerRef.current.postMessage({ action: 'init' })
   }, [])
 
   const stopSession = useCallback(() => {
     sessionActiveRef.current = false
     loadedRef.current = false
+    mtLoadedRef.current = false
+    ttsLoadedRef.current = false
     recognitionRef.current?.stop()
     recognitionRef.current?.abort()
     recognitionRef.current = null
-    window.speechSynthesis?.cancel()
+    
+    if (currentAudioSourceRef.current) {
+      try { currentAudioSourceRef.current.stop() } catch {}
+      currentAudioSourceRef.current.disconnect()
+      currentAudioSourceRef.current = null
+    }
+    
     setState('idle')
     setCurrentText('')
   }, [])
@@ -322,7 +380,6 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
     if (sessionActiveRef.current) setState('ready')
   }, [])
 
-  // Auto-iniciar en modo automático cuando el estado es 'ready'
   useEffect(() => {
     if (autoMode && state === 'ready' && sessionActiveRef.current) {
       startListening()
@@ -340,7 +397,6 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
       startSession()
     }
     
-    // Esperar a que los modelos estén cargados
     let attempts = 0
     while (!loadedRef.current && attempts < 100) {
       await new Promise(r => setTimeout(r, 100))
@@ -348,11 +404,10 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
     }
 
     if (!loadedRef.current) {
-      setError('Los modelos locales de traducción no se cargaron a tiempo.')
+      setError('Los motores de IA locales no se cargaron a tiempo.')
       return
     }
 
-    // Agregar al transcript lo que escribió el usuario
     const userEntry: TranscriptEntry = {
       id: `${Date.now()}-user`,
       role: 'user',
