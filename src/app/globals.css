@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  height: -webkit-fill-available;
+  overscroll-behavior: none;
+  background-color: #09090B;
+}
+
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* Custom scrollbars sutiles para áreas de transcripción */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Waveform bars con ritmo premium */
+.waveform-bar {
+  width: 3px;
+  border-radius: 2px;
+  transform-origin: bottom;
+  animation: waveform-dance 0.7s ease-in-out infinite alternate;
+}
+
+.waveform-bar:nth-child(1) { animation-delay: 0s; }
+.waveform-bar:nth-child(2) { animation-delay: 0.12s; }
+.waveform-bar:nth-child(3) { animation-delay: 0.24s; }
+.waveform-bar:nth-child(4) { animation-delay: 0.18s; }
+.waveform-bar:nth-child(5) { animation-delay: 0.06s; }
+
+@keyframes waveform-dance {
+  from { transform: scaleY(0.25); opacity: 0.4; }
+  to   { transform: scaleY(1);   opacity: 1; }
+}
+
+/* Pulse ring para el botón activo */
+.pulse-ring {
+  animation: pulse-ring 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.5; }
+  50%  { transform: scale(1.2);  opacity: 0.15; }
+  100% { transform: scale(1);    opacity: 0.5; }
+}
+
+/* Transcript entry animation ultra fluida */
+.transcript-entry {
+  animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Safe area para móvil */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+/* Gradientes finos animados */
+.bg-gradient-radial {
+  background-image: radial-gradient(circle at top, var(--tw-gradient-stops));
+}
+
+/* Glassmorphism premium con borde interior */
+.premium-glass {
+  background: rgba(18, 18, 21, 0.65);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
