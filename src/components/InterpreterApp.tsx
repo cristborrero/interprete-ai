@@ -203,22 +203,22 @@ export default function InterpreterApp() {
     : 'text-text-muted hover:text-text-secondary transition-colors font-medium'
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-surface text-text-primary">
+    <div className="flex h-[100dvh] w-screen overflow-hidden bg-surface text-text-primary">
       
       {/* ========================================================= */}
       {/* ── COLUMNA 1: SIDEBAR DE NAVEGACIÓN IZQUIERDO ─────────────── */}
       {/* ========================================================= */}
-      <aside className="w-[260px] border-r border-border bg-surface-DEFAULT flex flex-col justify-between p-5 select-none shrink-0 z-20">
+      <aside className="hidden md:flex w-[60px] lg:w-[260px] border-r border-border bg-surface-DEFAULT flex-col justify-between py-5 px-2 lg:px-5 select-none shrink-0 z-20">
         <div className="space-y-7">
           
           {/* Logo Corporativo */}
-          <div className="flex items-center gap-3 px-1">
-            <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <div className="flex items-center gap-3 px-1 justify-center lg:justify-start">
+            <svg className="w-6 h-6 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               <path d="M12 7v5" />
               <path d="M12 12a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
             </svg>
-            <span className="text-[14px] font-bold text-text-primary tracking-tight">
+            <span className="hidden lg:block text-[14px] font-bold text-text-primary tracking-tight">
               Intérprete<span className="text-emerald-400">AI</span>
             </span>
           </div>
@@ -274,8 +274,8 @@ export default function InterpreterApp() {
             />
           </nav>
 
-          {/* Premium Pro Box */}
-          <div className="p-4 rounded-2xl border border-emerald-500/10 bg-emerald-950/5 space-y-3">
+          {/* Premium Pro Box — solo visible en desktop */}
+          <div className="hidden lg:block p-4 rounded-2xl border border-emerald-500/10 bg-emerald-950/5 space-y-3">
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" />
@@ -293,7 +293,7 @@ export default function InterpreterApp() {
         </div>
 
         {/* Footer del Sidebar */}
-        <div className="space-y-4">
+        <div className="hidden lg:flex flex-col space-y-4">
           {/* Selector de Modo Oscuro */}
           <div className="flex items-center justify-between p-3 rounded-xl border border-border/40 bg-surface-1/30">
             <div className="flex items-center gap-2">
@@ -331,7 +331,14 @@ export default function InterpreterApp() {
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-surface relative z-10">
         
         {/* Barra superior de estado */}
-        <header className="flex items-center justify-between px-8 py-5 border-b border-border shrink-0 select-none">
+        {/* Mobile logo — only rendered inside header on mobile */}
+        <header className="flex items-center justify-between px-4 md:px-8 py-3 md:py-5 border-b border-border shrink-0 select-none">
+          <div className="flex md:hidden items-center gap-2">
+            <svg className="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span className="text-[13px] font-bold text-text-primary">IntérpreteAI</span>
+          </div>
           <div className="flex items-center gap-3">
             {!isActive && (
               <button
@@ -359,33 +366,33 @@ export default function InterpreterApp() {
             )}
           </div>
 
-          <div className="flex items-center gap-3.5">
+          <div className="flex items-center gap-2 md:gap-3.5">
             {/* Botón sutil de Terminar Consulta (Desconexión) */}
             {isActive && (
               <button
                 onClick={stopSession}
-                className="px-3.5 py-1.8 rounded-xl border border-red-500/25 bg-red-950/15 hover:bg-red-950/25 hover:border-red-500/55 text-red-400 text-[10.5px] font-bold flex items-center gap-1.5 transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]"
+                className="px-2.5 md:px-3.5 py-1.5 rounded-xl border border-red-500/25 bg-red-950/15 hover:bg-red-950/25 hover:border-red-500/55 text-red-400 text-[10px] md:text-[10.5px] font-bold flex items-center gap-1.5 transition-all"
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                 </svg>
-                <span>Terminar consulta</span>
+                <span className="hidden sm:inline">Terminar</span>
               </button>
             )}
 
             {/* Estado del WebSocket de Gemini o Servidor Local */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface-1/40">
+            <div className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1.5 rounded-full border border-border bg-surface-1/40">
               <span className={clsx(
                 'w-1.5 h-1.5 rounded-full',
                 isActive ? 'bg-emerald-500 animate-pulse' : 'bg-text-muted/40'
               )} />
-              <span className="text-[10.5px] font-semibold text-text-secondary">
+              <span className="text-[10px] md:text-[10.5px] font-semibold text-text-secondary">
                 {isActive ? 'En línea' : 'Desconectado'}
               </span>
             </div>
 
             {/* Selector de idiomas */}
-            <div className="flex items-center gap-2 text-[11px] font-bold tracking-wider px-3.5 py-1.5 rounded-xl bg-surface-2/40 border border-border/80">
+            <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold tracking-wider px-3.5 py-1.5 rounded-xl bg-surface-2/40 border border-border/80">
               <span className="text-emerald-400">ES</span>
               <span className="opacity-30">↔</span>
               <span className="text-blue-400">EN</span>
@@ -400,41 +407,41 @@ export default function InterpreterApp() {
             /* ======================================================= */
             /* ── INTERFAZ PRINCIPAL: TRADUCTOR SIMULTÁNEO ─────────── */
             /* ======================================================= */
-            <div className="flex-1 flex flex-col p-8 space-y-8 max-w-[1200px] w-full mx-auto justify-between">
+            <div className="flex-1 flex flex-col px-4 md:px-8 py-4 md:py-6 space-y-4 md:space-y-8 max-w-[1200px] w-full mx-auto justify-between pb-20 md:pb-4">
               
               {/* Hero Section */}
-              <div className="text-center space-y-2 mt-4 select-none">
-                <h2 className="text-[28px] lg:text-[34px] font-extrabold tracking-tight text-text-primary antialiased leading-none">
+              <div className="text-center space-y-1.5 select-none">
+                <h2 className="text-[20px] sm:text-[26px] lg:text-[34px] font-extrabold tracking-tight text-text-primary antialiased leading-tight">
                   Traduce sin límites, conecta sin fronteras.
                 </h2>
-                <p className="text-[12.5px] lg:text-[14px] text-text-muted leading-relaxed font-medium">
+                <p className="text-[11px] sm:text-[12.5px] lg:text-[14px] text-text-muted leading-relaxed font-medium">
                   Traducción en tiempo real con IA de última generación.
                 </p>
               </div>
 
               {/* Controles de Modo & Micrófono Central */}
-              <div className="flex items-center justify-center gap-8 py-3 select-none">
+              <div className="flex items-center justify-center gap-3 md:gap-8 py-2 select-none">
                 
                 {/* Botón PTT */}
                 <button
                   onClick={() => handleSetAutoMode(false)}
                   disabled={isActive}
                   className={clsx(
-                    'px-5 py-3 rounded-2xl border text-left flex items-center gap-3.5 transition-all duration-200 shadow-premium',
+                    'px-3 md:px-5 py-2.5 md:py-3 rounded-2xl border text-left flex items-center gap-2 md:gap-3.5 transition-all duration-200 shadow-premium',
                     !autoMode 
                       ? 'bg-surface-2 border-border-active ring-1 ring-inset ring-white/[0.04]' 
                       : 'bg-surface-DEFAULT border-border/40 text-text-muted hover:border-border-active hover:bg-surface-1/40',
                     isActive && 'opacity-40 cursor-not-allowed'
                   )}
                 >
-                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="w-4 h-4 md:w-5 md:h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                     <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
                     <line x1="12" y1="19" x2="12" y2="22" />
                   </svg>
                   <div className="flex flex-col">
-                    <span className="text-[11px] font-bold text-text-primary">Push-to-Talk</span>
-                    <span className="text-[9.5px] text-text-muted">Presiona para hablar</span>
+                    <span className="text-[10.5px] md:text-[11px] font-bold text-text-primary">Push-to-Talk</span>
+                    <span className="hidden sm:block text-[9.5px] text-text-muted">Presiona para hablar</span>
                   </div>
                 </button>
 
@@ -449,7 +456,7 @@ export default function InterpreterApp() {
                   onTouchEnd={(e) => { e.preventDefault(); handlePressEnd() }}
                   disabled={isActive && !canTalk && !isListening}
                   className={clsx(
-                    'relative w-20 h-20 rounded-full border-2 transition-all duration-300',
+                    'relative w-16 h-16 md:w-20 md:h-20 rounded-full border-2 transition-all duration-300',
                     'flex items-center justify-center select-none touch-none shadow-premium',
                     orbBorder,
                     (isActive && canTalk) && 'active:scale-95 hover:shadow-premium-hover',
@@ -459,7 +466,7 @@ export default function InterpreterApp() {
                   {isListening && (
                     <span className="absolute inset-0 rounded-full border border-emerald-500/25 pulse-ring" />
                   )}
-                  <MicIcon size={26} active={isListening || isActive} translating={isTranslating} />
+                  <MicIcon size={22} active={isListening || isActive} translating={isTranslating} />
                 </button>
 
                 {/* Botón Automático */}
@@ -467,19 +474,19 @@ export default function InterpreterApp() {
                   onClick={() => handleSetAutoMode(true)}
                   disabled={isActive}
                   className={clsx(
-                    'px-5 py-3 rounded-2xl border text-left flex items-center gap-3.5 transition-all duration-200 shadow-premium',
+                    'px-3 md:px-5 py-2.5 md:py-3 rounded-2xl border text-left flex items-center gap-2 md:gap-3.5 transition-all duration-200 shadow-premium',
                     autoMode 
                       ? 'bg-surface-2 border-border-active ring-1 ring-inset ring-white/[0.04]' 
                       : 'bg-surface-DEFAULT border-border/40 text-text-muted hover:border-border-active hover:bg-surface-1/40',
                     isActive && 'opacity-40 cursor-not-allowed'
                   )}
                 >
-                  <svg className="w-5 h-5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="w-4 h-4 md:w-5 md:h-5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
                   </svg>
                   <div className="flex flex-col">
-                    <span className="text-[11px] font-bold text-text-primary">Automático</span>
-                    <span className="text-[9.5px] text-text-muted">Detección de idioma</span>
+                    <span className="text-[10.5px] md:text-[11px] font-bold text-text-primary">Automático</span>
+                    <span className="hidden sm:block text-[9.5px] text-text-muted">Detección de idioma</span>
                   </div>
                 </button>
 
@@ -628,7 +635,7 @@ export default function InterpreterApp() {
               )}
 
               {/* Grilla Inferior de 4 Columnas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 select-none">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 pt-2 md:pt-4 select-none">
                 <ValueCard
                   title="Traducción en tiempo real"
                   desc="Resultados instantáneos y precisos."
@@ -692,7 +699,7 @@ export default function InterpreterApp() {
             /* ======================================================= */
             /* ── PESTAÑA: HISTORIAL COMPLETO DE DIÁLOGOS ────────────── */
             /* ======================================================= */
-            <div className="flex-1 flex flex-col p-8 max-w-[1000px] w-full mx-auto justify-between">
+            <div className="flex-1 flex flex-col px-4 md:px-8 py-4 max-w-[1000px] w-full mx-auto justify-between pb-20 md:pb-4">
               <div className="flex-1 rounded-3xl border border-border bg-surface-1 shadow-premium overflow-hidden min-h-[500px] flex flex-col">
                 <TranscriptPanel
                   entries={transcript}
@@ -704,7 +711,7 @@ export default function InterpreterApp() {
           )}
 
           {activeTab === 'favoritos' && (
-            <div className="flex-1 flex flex-col p-8 max-w-[800px] w-full mx-auto space-y-6">
+            <div className="flex-1 flex flex-col px-4 md:px-8 py-4 max-w-[800px] w-full mx-auto space-y-6 pb-20 md:pb-4">
               <div className="space-y-1.5 select-none">
                 <h3 className="text-[18px] font-bold text-text-primary">Frases Favoritas</h3>
                 <p className="text-[11px] text-text-muted">Marcá con favoritos las frases de traducción recurrente para tenerlas al alcance rápido.</p>
@@ -730,7 +737,7 @@ export default function InterpreterApp() {
           )}
 
           {activeTab === 'ajustes' && (
-            <div className="flex-1 flex flex-col p-8 max-w-[800px] w-full mx-auto space-y-6">
+            <div className="flex-1 flex flex-col px-4 md:px-8 py-4 max-w-[800px] w-full mx-auto space-y-6 pb-20 md:pb-4">
               <div className="space-y-1.5 select-none">
                 <h3 className="text-[18px] font-bold text-text-primary">Ajustes Generales</h3>
                 <p className="text-[11px] text-text-muted">Ajustá la configuración del sintetizador de voz y la conexión del traductor.</p>
@@ -798,6 +805,39 @@ export default function InterpreterApp() {
 
         </div>
       </main>
+
+      {/* Bottom Tab Bar — mobile only */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-surface/95 backdrop-blur-md border-t border-border flex items-center justify-around pb-safe pt-2">
+        {([
+          { key: 'traductor', label: 'Traductor', path: 'm5 8 6 6 6-6 M4 14 l6-6 8 8' },
+          { key: 'historial', label: 'Historial', circle: true },
+          { key: 'favoritos', label: 'Favoritos', star: true },
+          { key: 'ajustes',   label: 'Ajustes',   gear: true },
+        ] as const).map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={clsx(
+              'flex flex-col items-center gap-0.5 px-4 py-2 rounded-xl transition-all min-w-[60px]',
+              activeTab === key ? 'text-emerald-400' : 'text-text-muted'
+            )}
+          >
+            {key === 'traductor' && (
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 8 6 6 6-6" /><path d="m4 14 6-6 8 8" /></svg>
+            )}
+            {key === 'historial' && (
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+            )}
+            {key === 'favoritos' && (
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+            )}
+            {key === 'ajustes' && (
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+            )}
+            <span className="text-[9px] font-semibold tracking-tight">{label}</span>
+          </button>
+        ))}
+      </nav>
 
     </div>
   )
