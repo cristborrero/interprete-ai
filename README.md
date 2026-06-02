@@ -1,16 +1,24 @@
 # IntérpreteAI ── Traductor Simultáneo Premium
 
 <div align="center">
+  
+<img src="./public/icon-512.png" alt="IntérpreteAI Logo" width="120" height="120" style="border-radius: 20%; margin-bottom: 20px;" />
 
-[![Stars](https://img.shields.io/github/stars/cristborrero/interprete-ai?style=for-the-badge&logo=github&color=34d399&logoColor=white)](https://github.com/cristborrero/interprete-ai/stargazers)
-[![License](https://img.shields.io/github/license/cristborrero/interprete-ai?style=for-the-badge&color=60a5fa)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/cristborrero/interprete-ai?style=for-the-badge&logo=github&color=FF600C&logoColor=white)](https://github.com/cristborrero/interprete-ai/stargazers)
+[![License](https://img.shields.io/github/license/cristborrero/interprete-ai?style=for-the-badge&color=333333)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-007acc?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
 </div>
 
-IntérpreteAI es un sistema de interpretación simultánea bidireccional Español ↔ English en tiempo real, diseñado con un estándar visual premium y optimizado para entornos profesionales y de salud. Combina la potencia del procesamiento en la nube con la flexibilidad del procesamiento local (offline).
+<br>
+
+## 📖 About
+
+**IntérpreteAI** es un sistema de interpretación simultánea bidireccional Español ↔ English en tiempo real, diseñado con un estándar visual premium y optimizado para entornos profesionales y de salud. Combina la potencia del procesamiento en la nube mediante modelos gigantes (LLMs) con la flexibilidad, privacidad y resiliencia del procesamiento local (offline). 
+
+Nuestro objetivo es romper las barreras idiomáticas de forma instantánea, proveyendo una interfaz oscura elegante de alto contraste, cero distracciones y un rendimiento óptimo de 60fps constantes.
 
 ---
 
