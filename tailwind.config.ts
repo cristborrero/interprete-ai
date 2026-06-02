@@ -15,9 +15,9 @@ const config: Config = {
       colors: {
         surface: {
           DEFAULT: '#000000', // Black
-          1: '#333333',       // Dark Gray
-          2: '#646464',       // Gray
-          3: '#C3C3C3',       // Light Gray
+          1: '#0F0F0F',       // Very Dark Panel
+          2: '#1A1A1A',       // Dark Panel
+          3: '#262626',       // Control Background
         },
         border: {
           DEFAULT: '#333333', // Dark Gray
