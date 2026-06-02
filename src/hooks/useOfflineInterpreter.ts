@@ -17,6 +17,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TranscriptEntry, Language } from './useGeminiLive'
 
+// Declaración para compatibilidad de tipos con Web Speech API en TypeScript
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type SpeechRecognition = any;
+
 // ── Tipos ─────────────────────────────────────────────────────────
 
 export type OfflineState =
