@@ -17,9 +17,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TranscriptEntry, Language } from './useGeminiLive'
 
-// Declaración para compatibilidad de tipos con Web Speech API en TypeScript
+// Interfaz extendida de Window para cubrir Web Speech API y su prefijo webkit
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type SpeechRecognition = any;
+interface SpeechAwareWindow extends Window {
+  SpeechRecognition?: new () => any
+  webkitSpeechRecognition?: new () => any
+}
+type SpeechRecognition = any
 
 // ── Tipos ─────────────────────────────────────────────────────────
 
@@ -214,7 +218,8 @@ export function useOfflineInterpreter(): UseOfflineInterpreterReturn {
   const buildRecognition = useCallback((): SpeechRecognition | null => {
     if (typeof window === 'undefined') return null
 
-    const SR = window.SpeechRecognition || (window as Window & typeof globalThis & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition
+    const w = window as SpeechAwareWindow
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition
     if (!SR) {
       setError('SpeechRecognition no está disponible en este navegador. Usá Chrome o Edge.')
       return null
