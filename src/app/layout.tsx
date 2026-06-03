@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import SwRegistrar from '@/components/SwRegistrar'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -39,6 +40,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={inter.variable}>
       <body className="bg-surface text-text-primary antialiased overflow-hidden">
+        <SwRegistrar />
         {children}
       </body>
     </html>

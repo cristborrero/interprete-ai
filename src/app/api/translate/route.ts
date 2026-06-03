@@ -4,6 +4,9 @@ import { NextResponse } from 'next/server'
  * POST /api/translate
  * Body: { text: string, from: 'es' | 'en' }
  * Returns: { translation: string }
+ *
+ * Usa OpenRouter con google/gemini-flash-1.5 para traducción.
+ * Compatible con cualquier modelo OpenAI-format en OpenRouter.
  */
 
 const SYSTEM_PROMPT = `You are a professional simultaneous interpreter specializing in Spanish ↔ English.
@@ -16,11 +19,13 @@ RULES:
 - Context: medical appointments and professional settings in the UK.
   The user is Colombian Spanish-speaking communicating with English-speaking professionals.`
 
+const MODEL = 'google/gemini-3.1-flash-lite'
+
 export async function POST(req: Request) {
-  const key = process.env.GEMINI_API_KEY
+  const key = process.env.OPENROUTER_API_KEY
   if (!key) {
     return NextResponse.json(
-      { error: 'GEMINI_API_KEY not configured' },
+      { error: 'OPENROUTER_API_KEY not configured' },
       { status: 500 }
     )
   }
@@ -44,34 +49,36 @@ export async function POST(req: Request) {
   const prompt = `${direction}. Return ONLY the translation, nothing else.\n\nText: ${text}`
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 1024,
-          },
-        }),
-      }
-    )
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://interprete-ai.vercel.app',
+        'X-Title': 'IntérpreteAI',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.2,
+        max_tokens: 1024,
+      }),
+    })
 
     if (!res.ok) {
       const errText = await res.text()
-      console.error('[translate] Gemini error:', errText)
+      console.error('[translate] OpenRouter error:', errText)
       return NextResponse.json(
-        { error: `Gemini API error: ${res.status}` },
+        { error: `Translation API error: ${res.status}` },
         { status: 502 }
       )
     }
 
     const data = await res.json()
-    const translation =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
+    const translation = data?.choices?.[0]?.message?.content?.trim() ?? ''
 
     return NextResponse.json({ translation })
   } catch (e) {

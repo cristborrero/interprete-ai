@@ -2,47 +2,41 @@
 
 > Este documento mantiene el registro en vivo del estado del proyecto, hitos alcanzados, problemas conocidos y mapa de ruta (roadmap).
 
-## 🟢 Estado Actual: `BETA ESTABLE / EN PRODUCCIÓN`
+## 🟢 Estado Actual: `ESTABLE / SIMPLIFICADO`
 
-**Última actualización:** Junio 2026
-**Despliegue actual:** Vercel (Next.js App Router)
-**Branch principal:** `main`
+**Última actualización:** Junio 2026  
+**Despliegue actual:** Vercel (Next.js App Router)  
+**Branch principal:** `main`  
 
 ---
 
 ## 🎯 Hitos Completados (Milestones)
 
-- [x] **Arquitectura Base**: Setup de Next.js 16 (App Router), Tailwind CSS v3, TypeScript estricto.
-- [x] **Integración Gemini Live**: Conexión WebSockets para traducción en la nube con latencia ultra baja.
-- [x] **Motor Offline (Local)**: Web Worker implementado con `transformers.js` y modelos OPUS-MT de Hugging Face.
-- [x] **Web Speech API**: Integración de reconocimiento de voz nativo y text-to-speech con controles de volumen y velocidad.
-- [x] **Sistema de Diseño Premium**: Implementación de interfaz Glassmorphism en modo Dark exclusivo, sin emojis, uso estricto de iconos SVG.
-- [x] **Responsive Mobile-First**: Tab bar fija inferior para móviles, barra lateral adaptativa para tablets, layout de pantalla completa.
-- [x] **Branding Colors**: Mapeo estricto del manual de marca: Naranja (#FF600C), Rojo (#FF1300), grises neutros (#0F0F0F, #1A1A1A, #333333, #646464).
-- [x] **Optimización de Build**: Transición a Webpack para soporte estable de Web Workers en Next.js.
-- [x] **Integración de Kokoro-82M**: Implementación de `kokoro-js` para síntesis de voz (TTS) ultra-realista 100% offline, reemplazando la Web Speech API nativa.
+- [x] **Arquitectura Base**: Setup de Next.js 15, Tailwind CSS v3, TypeScript estricto.
+- [x] **Traducción REST via API**: Implementación del endpoint `/api/translate` integrado con **OpenRouter** para consumir `google/gemini-3.1-flash-lite`.
+- [x] **Speech-to-Text (STT) Nativo**: Configuración del reconocimiento de voz nativo por medio de la Web Speech API del navegador, con soporte continuo e interactivo.
+- [x] **Text-to-Speech (TTS) Flexible**: Uso de `window.speechSynthesis` con panel interactivo desplegable para seleccionar velocidades y voces del sistema disponibles.
+- [x] **Sistema de Diseño Premium**: Interfaz Glassmorphism oscura unificada sin emojis y usando iconos SVG vectoriales.
+- [x] **Push-to-Talk (PTT)**: Mecánica central de captura de audio y disparo controlado para traducción fluida.
 
 ---
 
 ## 🚧 En Progreso (Work In Progress)
 
-- [ ] **Documentación Extendida**: Mejorar los manuales de contribución y arquitectura en profundidad.
-- [ ] **Soporte PWA (Progressive Web App)**: Refinar el `manifest.json` y los Service Workers para instalación nativa.
+- [ ] **Optimización del Reconocimiento**: Refinar el manejo del silencio y eventos de finalización de habla para mejorar la experiencia manos libres.
+- [ ] **Soporte PWA (Progressive Web App)**: Ajustar Service Workers y el manifiesto para permitir instalación local.
 
 ---
 
 ## 📋 Backlog / Roadmap a Futuro
 
-1. **Gestión de Sesiones**: Login/Signup robusto utilizando Supabase o Firebase.
-2. **Sincronización en la Nube**: Guardar "Historial" y "Favoritos" en base de datos remota para acceso multi-dispositivo (actualmente corre en localStorage).
-3. **Soporte Multi-idioma Offline**: Permitir descarga de modelos adicionales (ej. Portugués, Francés) bajo demanda del usuario.
-4. **Analíticas**: Integración con Vercel Web Vitals o PostHog respetando el esquema de privacidad.
-5. **Testing**: Implementación de tests E2E (Playwright) para el flujo de Web Workers y WebSocket.
+1. **Persistencia Local**: Opción de guardar historial local en `localStorage` (sin base de datos) para revisión rápida de conversaciones recientes.
+2. **Soporte Offline Opcional**: Investigar de nuevo modelos ultra-ligeros de traducción en el cliente si es requerido, pero manteniendo la arquitectura base web.
+3. **Optimización de Voces**: Sugerir/detectar voces HQ del sistema operativo de manera automática para alertar al usuario si tiene voces robóticas de baja calidad por defecto.
 
 ---
 
 ## 🐞 Bugs Conocidos / Deuda Técnica
 
-- *Safari Web Speech API*: Apple sigue teniendo soporte inconsistente para `SpeechRecognition` continuo. Se sugiere notificar al usuario que utilice Chrome, Edge o navegadores Chromium.
-- *Carga inicial OPUS-MT*: La primera visita descarga ~150MB en IndexedDB. Aunque hay barra de progreso, puede tomar unos minutos dependiendo de la conexión del usuario.
-
+*   **Safari Web Speech API**: Apple tiene un soporte inconsistente para `SpeechRecognition` continuo. Se recomienda fuertemente el uso de navegadores basados en Chromium (Chrome, Edge) en entornos de escritorio y Android.
+*   **Voces macOS por Defecto**: Las voces integradas por defecto en macOS pueden sonar robóticas a menos que el usuario descargue activamente las voces mejoradas (HQ) desde los Ajustes del Sistema -> Accesibilidad.

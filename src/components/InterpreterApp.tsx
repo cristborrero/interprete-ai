@@ -2,11 +2,11 @@
 
 /**
  * InterpreterApp.tsx
- * UI compacta y funcional: 2 paneles (ES | EN) + botón PTT + selector de voz.
- * Sin tabs, sin sidebar, sin features decorativos.
+ * UI compacta y funcional: 2 paneles (ES | EN) + botón central + selector de voz.
+ * Soporta modo Auto (ciclo continuo) y modo Manual (PTT).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useInterpreter, detectLang, type Language, type TranscriptEntry } from '@/hooks/useInterpreter'
 
 // ── Iconos inline ─────────────────────────────────────────────────
@@ -21,6 +21,14 @@ function IconMic({ active, listening }: { active: boolean; listening: boolean })
       <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
       <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
       <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  )
+}
+
+function IconStop() {
+  return (
+    <svg className="w-6 h-6 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+      <rect x="4" y="4" width="16" height="16" rx="2" />
     </svg>
   )
 }
@@ -58,14 +66,24 @@ function IconClear({ className = '' }: { className?: string }) {
   )
 }
 
+function IconAuto({ active }: { active: boolean }) {
+  return (
+    <svg className={`w-4 h-4 transition-colors ${active ? 'text-green-400' : 'text-neutral-500'}`}
+      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+    </svg>
+  )
+}
+
 // ── Waveform animado ──────────────────────────────────────────────
 
-function Waveform({ active }: { active: boolean }) {
+function Waveform({ active, color = 'bg-orange-400' }: { active: boolean; color?: string }) {
   if (!active) return null
   return (
     <div className="flex items-center gap-[3px] h-4">
       {[1, 2, 3, 4, 5].map(i => (
-        <div key={i} className="waveform-bar bg-orange-400 h-4" />
+        <div key={i} className={`waveform-bar ${color} h-4`} />
       ))}
     </div>
   )
@@ -77,12 +95,13 @@ interface PanelProps {
   lang: Language
   lastEntry: TranscriptEntry | null
   interimText: string
-  isSource: boolean // el idioma activo/detectado
+  isSource: boolean
+  isListening: boolean
   onTranslate: (text: string, from: Language) => void
   onSpeak: (text: string, lang: Language) => void
 }
 
-function TranslationPanel({ lang, lastEntry, interimText, isSource, onTranslate, onSpeak }: PanelProps) {
+function TranslationPanel({ lang, lastEntry, interimText, isSource, isListening, onTranslate, onSpeak }: PanelProps) {
   const [editText, setEditText] = useState('')
   const [copied, setCopied] = useState(false)
 
@@ -93,12 +112,10 @@ function TranslationPanel({ lang, lastEntry, interimText, isSource, onTranslate,
     : 'Speak or type in English...'
   const accentColor = lang === 'es' ? 'text-orange-400' : 'text-blue-400'
   const dotColor = lang === 'es' ? 'bg-orange-400' : 'bg-blue-400'
-  const btnColor = lang === 'es'
-    ? 'bg-orange-500 hover:bg-orange-400 text-white'
-    : 'bg-blue-500 hover:bg-blue-400 text-white'
+  const borderActive = lang === 'es'
+    ? 'border-orange-500/40 shadow-[0_0_20px_rgba(251,146,60,0.08)]'
+    : 'border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.08)]'
 
-  // Texto a mostrar: lo que vino del transcript (última entrada de este idioma)
-  // o el texto interim si este panel es el idioma fuente actual
   const displayText = lastEntry?.text ?? ''
 
   const handleCopy = async () => {
@@ -115,16 +132,21 @@ function TranslationPanel({ lang, lastEntry, interimText, isSource, onTranslate,
   }
 
   return (
-    <div className={`flex flex-col flex-1 rounded-2xl border bg-neutral-900 transition-all duration-200 overflow-hidden
-      ${isSource ? 'border-orange-500/40 shadow-[0_0_20px_rgba(251,146,60,0.08)]' : 'border-neutral-700/60'}`}>
+    <div className={`flex flex-col flex-1 rounded-2xl border bg-neutral-900 transition-all duration-300 overflow-hidden
+      ${isSource && isListening ? borderActive : 'border-neutral-700/60'}`}>
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 shrink-0">
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${dotColor} ${isSource ? 'animate-pulse' : 'opacity-40'}`} />
+          <span className={`w-2 h-2 rounded-full ${dotColor} transition-opacity ${isSource && isListening ? 'animate-pulse opacity-100' : 'opacity-30'}`} />
           <span className="text-xs font-bold text-neutral-200 uppercase tracking-widest">
             {flag} {label}
           </span>
+          {isSource && isListening && (
+            <span className={`text-[10px] font-medium ${accentColor} animate-pulse`}>
+              {lang === 'es' ? 'escuchando' : 'listening'}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           {(editText.trim() || displayText) && (
@@ -150,21 +172,18 @@ function TranslationPanel({ lang, lastEntry, interimText, isSource, onTranslate,
 
       {/* Cuerpo */}
       <div className="flex-1 flex flex-col p-4 gap-3 min-h-0">
-        {/* Texto del transcript (último) */}
         {displayText && !editText && (
           <p className="text-[15px] leading-relaxed text-neutral-100 flex-1 overflow-y-auto custom-scrollbar">
             {displayText}
           </p>
         )}
 
-        {/* Texto interim (mientras habla) */}
         {isSource && interimText && !editText && (
           <p className={`text-[14px] leading-relaxed ${accentColor} opacity-70 italic`}>
             {interimText}
           </p>
         )}
 
-        {/* Área de escritura manual */}
         <textarea
           value={editText}
           onChange={e => setEditText(e.target.value)}
@@ -186,7 +205,8 @@ function TranslationPanel({ lang, lastEntry, interimText, isSource, onTranslate,
         <div className="px-4 pb-4 shrink-0">
           <button
             onClick={() => { onTranslate(editText.trim(), lang); setEditText('') }}
-            className={`w-full py-2 rounded-xl text-[12px] font-bold transition-all ${btnColor}`}
+            className={`w-full py-2 rounded-xl text-[12px] font-bold transition-all
+              ${lang === 'es' ? 'bg-orange-500 hover:bg-orange-400 text-white' : 'bg-blue-500 hover:bg-blue-400 text-white'}`}
           >
             {lang === 'es' ? 'Traducir al inglés →' : 'Translate to Spanish →'}
           </button>
@@ -204,6 +224,7 @@ export default function InterpreterApp() {
     transcript,
     interimText,
     error,
+    autoMode,
     availableVoices,
     esVoice,
     enVoice,
@@ -216,6 +237,7 @@ export default function InterpreterApp() {
     translateManual,
     clearTranscript,
     speak,
+    toggleAutoMode,
   } = useInterpreter()
 
   const [showVoicePanel, setShowVoicePanel] = useState(false)
@@ -224,41 +246,51 @@ export default function InterpreterApp() {
   const isListening = state === 'listening'
   const isBusy      = state === 'translating' || state === 'speaking'
 
-  // Último texto de cada idioma en el transcript
   const lastEs = [...transcript].reverse().find(e => e.lang === 'es') ?? null
   const lastEn = [...transcript].reverse().find(e => e.lang === 'en') ?? null
 
-  // Idioma detectado más recientemente (de las entradas de usuario)
   const lastUserEntry = [...transcript].reverse().find(e => e.role === 'user') ?? null
   const lastDetectedLang = lastUserEntry?.lang ?? null
 
-  // ── Botón PTT ─────────────────────────────────────────────────
+  // ── Botón central ─────────────────────────────────────────────
 
   const handleOrbClick = () => {
-    if (!isActive) { startSession(); return }
-    if (isListening) stopListening()
+    if (!isActive) {
+      startSession()
+      return
+    }
+    // En modo auto el botón no hace nada al tocar (solo el stop session lo detiene)
+    if (!autoMode) {
+      if (isListening) stopListening()
+    }
   }
 
   const handleOrbDown = () => {
-    if (!isActive || isBusy) return
+    if (!isActive || isBusy || autoMode) return
     startListening()
   }
 
   const handleOrbUp = () => {
-    if (isListening) stopListening()
+    if (!autoMode && isListening) stopListening()
   }
 
+  // Estilo del orb central
   const orbStyle = isListening
     ? 'bg-orange-500/20 border-orange-400 shadow-[0_0_30px_rgba(251,146,60,0.4)] scale-105'
+    : state === 'speaking'
+    ? 'bg-blue-500/10 border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.3)] animate-pulse'
     : isBusy
-    ? 'bg-blue-500/10 border-blue-500/40 animate-pulse'
+    ? 'bg-neutral-800 border-neutral-600 animate-pulse'
     : isActive
     ? 'bg-neutral-800 border-neutral-600 hover:border-neutral-500 cursor-pointer'
-    : 'bg-neutral-900 border-neutral-700 hover:border-orange-500/60 hover:bg-neutral-800 cursor-pointer animate-pulse'
+    : 'bg-neutral-900 border-neutral-700 hover:border-orange-500/60 hover:bg-neutral-800 cursor-pointer'
 
-  const orbLabel = isListening ? 'Escuchando...'
+  const orbLabel = isListening
+    ? (lastDetectedLang === 'en' ? 'Listening...' : 'Escuchando...')
     : state === 'translating' ? 'Traduciendo...'
-    : state === 'speaking' ? 'Reproduciendo...'
+    : state === 'speaking'
+      ? (lastDetectedLang === 'es' ? 'Speaking in English...' : 'Hablando en español...')
+    : isActive && autoMode ? 'Modo automático activo'
     : isActive ? 'Mantén presionado para hablar'
     : 'Toca para iniciar'
 
@@ -287,16 +319,37 @@ export default function InterpreterApp() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Toggle Auto/Manual */}
+          {isActive && (
+            <button
+              onClick={toggleAutoMode}
+              title={autoMode ? 'Cambiar a modo manual' : 'Cambiar a modo automático'}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold transition-all
+                ${autoMode
+                  ? 'border-green-800/60 bg-green-950/40 text-green-400 hover:bg-green-950/70'
+                  : 'border-neutral-800 bg-neutral-900 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
+                }`}
+            >
+              <IconAuto active={autoMode} />
+              {autoMode ? 'Auto' : 'Manual'}
+            </button>
+          )}
+
           {/* Estado */}
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-neutral-800 bg-neutral-900">
             <span className={`w-1.5 h-1.5 rounded-full transition-colors ${
               isListening ? 'bg-orange-400 animate-pulse'
-              : isBusy ? 'bg-blue-400 animate-pulse'
+              : state === 'speaking' ? 'bg-blue-400 animate-pulse'
+              : isBusy ? 'bg-yellow-400 animate-pulse'
               : isActive ? 'bg-green-400'
               : 'bg-neutral-600'
             }`} />
             <span className="text-[11px] font-medium text-neutral-400">
-              {isListening ? 'Escuchando' : isBusy ? 'Procesando' : isActive ? 'Activo' : 'Inactivo'}
+              {isListening ? 'Escuchando'
+               : state === 'speaking' ? 'Hablando'
+               : isBusy ? 'Procesando'
+               : isActive ? 'Activo'
+               : 'Inactivo'}
             </span>
           </div>
 
@@ -372,12 +425,6 @@ export default function InterpreterApp() {
       {error && (
         <div className="mx-4 mt-3 p-3 rounded-xl border border-red-900/60 bg-red-950/20 text-[12px] text-red-300 shrink-0 flex items-center justify-between gap-2">
           <span>{error}</span>
-          <button
-            onClick={() => {}}
-            className="text-red-500 hover:text-red-300 text-[11px] font-bold shrink-0"
-          >
-            ✕
-          </button>
         </div>
       )}
 
@@ -388,6 +435,7 @@ export default function InterpreterApp() {
           lastEntry={lastEs}
           interimText={interimText}
           isSource={lastDetectedLang === 'es' || (isListening && lastDetectedLang === null)}
+          isListening={isListening}
           onTranslate={translateManual}
           onSpeak={speak}
         />
@@ -421,6 +469,7 @@ export default function InterpreterApp() {
           lastEntry={lastEn}
           interimText={interimText}
           isSource={lastDetectedLang === 'en'}
+          isListening={isListening}
           onTranslate={translateManual}
           onSpeak={speak}
         />
@@ -431,35 +480,57 @@ export default function InterpreterApp() {
 
         {/* Label de estado */}
         <div className="flex items-center gap-2 h-5">
-          <Waveform active={isListening} />
+          <Waveform active={isListening} color="bg-orange-400" />
           <span className={`text-[12px] font-medium transition-colors ${
             isListening ? 'text-orange-400'
-            : isBusy ? 'text-blue-400'
+            : state === 'speaking' ? 'text-blue-400'
+            : isBusy ? 'text-yellow-400'
             : 'text-neutral-500'
           }`}>
             {orbLabel}
           </span>
-          <Waveform active={isBusy} />
+          <Waveform active={state === 'speaking'} color="bg-blue-400" />
         </div>
 
-        {/* Botón PTT */}
+        {/* Botón central */}
         <button
           id="ptt-button"
           onClick={handleOrbClick}
           onMouseDown={handleOrbDown}
           onMouseUp={handleOrbUp}
-          onMouseLeave={() => { if (isListening) handleOrbUp() }}
-          onTouchStart={e => { e.preventDefault(); isActive ? handleOrbDown() : startSession() }}
-          onTouchEnd={e => { e.preventDefault(); handleOrbUp() }}
+          onMouseLeave={() => { if (!autoMode && isListening) handleOrbUp() }}
+          onTouchStart={e => {
+            e.preventDefault()
+            if (!isActive) { startSession(); return }
+            if (!autoMode) handleOrbDown()
+          }}
+          onTouchEnd={e => {
+            e.preventDefault()
+            if (!autoMode) handleOrbUp()
+          }}
           className={`w-16 h-16 rounded-full border-2 flex items-center justify-center
-            transition-all duration-200 select-none touch-none mb-2
+            transition-all duration-200 select-none touch-none mb-2 relative
             ${orbStyle}`}
         >
           {isListening && (
             <span className="absolute w-16 h-16 rounded-full border border-orange-400/30 pulse-ring" />
           )}
-          <IconMic active={isActive} listening={isListening} />
+          {state === 'speaking' && (
+            <span className="absolute w-16 h-16 rounded-full border border-blue-400/20 pulse-ring" />
+          )}
+          {/* En modo auto activo: mostrar stop; en manual o inactivo: mostrar mic */}
+          {autoMode && isActive
+            ? <IconStop />
+            : <IconMic active={isActive} listening={isListening} />
+          }
         </button>
+
+        {/* Hint de modo */}
+        {!isActive && (
+          <p className="text-[11px] text-neutral-600 text-center pb-1">
+            Modo automático — detecta ES/EN solo
+          </p>
+        )}
       </div>
     </div>
   )

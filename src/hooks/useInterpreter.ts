@@ -7,7 +7,11 @@
  *
  * STT  → Web Speech API (browser nativo, sin modelos pesados)
  * TTS  → window.speechSynthesis (voces del sistema, seleccionables)
- * MTx  → POST /api/translate (Gemini Flash, una llamada REST simple)
+ * MTx  → POST /api/translate (OpenRouter → gemini-3.1-flash-lite)
+ *
+ * Modos:
+ *  - Manual (PTT): el usuario mantiene presionado para hablar
+ *  - Auto: STT → traduce → TTS habla → STT vuelve a escuchar solo
  * ─────────────────────────────────────────────────────────────────
  */
 
@@ -21,7 +25,7 @@ export type SessionState =
   | 'idle'        // sin sesión
   | 'ready'       // esperando input
   | 'listening'   // grabando voz del usuario
-  | 'translating' // llamada a Gemini en curso
+  | 'translating' // llamada a la API en curso
   | 'speaking'    // TTS reproduciendo
   | 'error'
 
@@ -53,6 +57,14 @@ export function detectLang(text: string): Language {
   return esCount >= enCount ? 'es' : 'en'
 }
 
+// ── Constantes de timing ──────────────────────────────────────────
+
+/** Pausa después de que el TTS termina antes de volver a escuchar (ms) */
+const AUTO_RESTART_DELAY_MS = 800
+
+/** Pausa mínima entre el fin del reconocimiento y el reinicio (ms) */
+const AUTO_LISTEN_DEBOUNCE_MS = 500
+
 // ── Hook ──────────────────────────────────────────────────────────
 
 export function useInterpreter() {
@@ -60,6 +72,7 @@ export function useInterpreter() {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([])
   const [interimText, setInterimText] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [autoMode, setAutoMode] = useState(true)
 
   // Voces disponibles del sistema
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
@@ -68,48 +81,81 @@ export function useInterpreter() {
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const sessionActiveRef = useRef(false)
+  const autoModeRef = useRef(true)
   const isTranslatingRef = useRef(false)
   const isSpeakingRef = useRef(false)
+  const autoRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Sync autoMode state → ref (el ref lo leen los callbacks asincrónicos)
+  useEffect(() => {
+    autoModeRef.current = autoMode
+  }, [autoMode])
+
+  // ── Helpers internos ──────────────────────────────────────────
+
+  const clearAutoRestartTimer = () => {
+    if (autoRestartTimerRef.current) {
+      clearTimeout(autoRestartTimerRef.current)
+      autoRestartTimerRef.current = null
+    }
+  }
 
   // ── Cargar voces del sistema ───────────────────────────────────
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    const synth = window.speechSynthesis
+    if (!synth) {
+      console.warn('[useInterpreter] window.speechSynthesis no está disponible en este navegador.')
+      return
+    }
+
     const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices()
-      if (voices.length === 0) return
+      try {
+        const voices = synth.getVoices()
+        if (voices.length === 0) return
 
-      setAvailableVoices(voices)
+        setAvailableVoices(voices)
 
-      // Auto-seleccionar la mejor voz ES y EN si no hay una ya elegida
-      setEsVoice(prev => {
-        if (prev) return prev
-        return (
-          voices.find(v => v.lang === 'es-ES' && v.localService) ||
-          voices.find(v => v.lang.startsWith('es') && v.localService) ||
-          voices.find(v => v.lang.startsWith('es')) ||
-          null
-        )
-      })
+        setEsVoice(prev => {
+          if (prev) return prev
+          return (
+            voices.find(v => v.lang === 'es-ES' && v.localService) ||
+            voices.find(v => v.lang.startsWith('es') && v.localService) ||
+            voices.find(v => v.lang.startsWith('es')) ||
+            null
+          )
+        })
 
-      setEnVoice(prev => {
-        if (prev) return prev
-        return (
-          voices.find(v => v.lang === 'en-GB' && v.localService) ||
-          voices.find(v => v.lang === 'en-US' && v.localService) ||
-          voices.find(v => v.lang.startsWith('en') && v.localService) ||
-          voices.find(v => v.lang.startsWith('en')) ||
-          null
-        )
-      })
+        setEnVoice(prev => {
+          if (prev) return prev
+          return (
+            voices.find(v => v.lang === 'en-GB' && v.localService) ||
+            voices.find(v => v.lang === 'en-US' && v.localService) ||
+            voices.find(v => v.lang.startsWith('en') && v.localService) ||
+            voices.find(v => v.lang.startsWith('en')) ||
+            null
+          )
+        })
+      } catch (e) {
+        console.warn('[useInterpreter] Error al cargar voces:', e)
+      }
     }
 
     loadVoices()
-    window.speechSynthesis.onvoiceschanged = loadVoices
+    try {
+      synth.onvoiceschanged = loadVoices
+    } catch (e) {
+      console.warn('[useInterpreter] Error al asignar onvoiceschanged:', e)
+    }
 
     return () => {
-      window.speechSynthesis.onvoiceschanged = null
+      try {
+        synth.onvoiceschanged = null
+      } catch (e) {
+        // Silencioso
+      }
     }
   }, [])
 
@@ -117,37 +163,86 @@ export function useInterpreter() {
 
   const speak = useCallback((text: string, lang: Language, onEnd?: () => void) => {
     if (typeof window === 'undefined') return
-
-    window.speechSynthesis.cancel()
-    const utter = new SpeechSynthesisUtterance(text)
-    utter.lang = lang === 'es' ? 'es-ES' : 'en-GB'
-
-    // Usar la voz seleccionada por el usuario si está disponible
-    const voice = lang === 'es' ? esVoice : enVoice
-    if (voice) utter.voice = voice
-
-    utter.rate = 0.95
-    utter.pitch = 1.0
-    utter.volume = 1.0
-
-    isSpeakingRef.current = true
-    setState('speaking')
-
-    utter.onend = () => {
-      isSpeakingRef.current = false
-      if (sessionActiveRef.current) setState('ready')
+    const synth = window.speechSynthesis
+    if (!synth || !window.SpeechSynthesisUtterance) {
+      console.warn('[useInterpreter] TTS no soportado en este navegador')
       onEnd?.()
+      if (sessionActiveRef.current) {
+        if (autoModeRef.current) {
+          clearAutoRestartTimer()
+          autoRestartTimerRef.current = setTimeout(() => {
+            if (sessionActiveRef.current && autoModeRef.current) {
+              startListeningInternal()
+            }
+          }, AUTO_RESTART_DELAY_MS)
+        } else {
+          setState('ready')
+        }
+      }
+      return
     }
 
-    utter.onerror = () => {
+    try {
+      synth.cancel()
+      const utter = new SpeechSynthesisUtterance(text)
+      utter.lang = lang === 'es' ? 'es-ES' : 'en-GB'
+
+      const voice = lang === 'es' ? esVoice : enVoice
+      if (voice) utter.voice = voice
+
+      utter.rate = 0.95
+      utter.pitch = 1.0
+      utter.volume = 1.0
+
+      isSpeakingRef.current = true
+      setState('speaking')
+
+      utter.onend = () => {
+        isSpeakingRef.current = false
+        onEnd?.()
+
+        if (!sessionActiveRef.current) return
+
+        if (autoModeRef.current) {
+          // En modo automático: volver a escuchar tras una pausa natural
+          clearAutoRestartTimer()
+          autoRestartTimerRef.current = setTimeout(() => {
+            if (sessionActiveRef.current && autoModeRef.current) {
+              startListeningInternal()
+            }
+          }, AUTO_RESTART_DELAY_MS)
+        } else {
+          setState('ready')
+        }
+      }
+
+      utter.onerror = (e) => {
+        console.warn('[useInterpreter] TTS onerror:', e)
+        isSpeakingRef.current = false
+        if (sessionActiveRef.current) {
+          if (autoModeRef.current) {
+            clearAutoRestartTimer()
+            autoRestartTimerRef.current = setTimeout(() => {
+              if (sessionActiveRef.current && autoModeRef.current) {
+                startListeningInternal()
+              }
+            }, AUTO_RESTART_DELAY_MS)
+          } else {
+            setState('ready')
+          }
+        }
+      }
+
+      synth.speak(utter)
+    } catch (e) {
+      console.error('[useInterpreter] TTS crash:', e)
       isSpeakingRef.current = false
       if (sessionActiveRef.current) setState('ready')
     }
-
-    window.speechSynthesis.speak(utter)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [esVoice, enVoice])
 
-  // ── Traducción via Gemini REST ─────────────────────────────────
+  // ── Traducción via REST ───────────────────────────────────────
 
   const translate = useCallback(async (text: string, from: Language) => {
     if (isTranslatingRef.current) return
@@ -169,7 +264,6 @@ export function useInterpreter() {
 
       const toLang: Language = from === 'es' ? 'en' : 'es'
 
-      // Agregar la traducción al transcript
       const entry: TranscriptEntry = {
         id: `${Date.now()}-assist`,
         role: 'assistant',
@@ -179,7 +273,6 @@ export function useInterpreter() {
       }
       setTranscript(prev => [...prev, entry])
 
-      // Leer la traducción en voz alta
       if (sessionActiveRef.current) {
         speak(data.translation, toLang)
       }
@@ -187,13 +280,25 @@ export function useInterpreter() {
       const msg = e instanceof Error ? e.message : 'Error de traducción'
       console.error('[useInterpreter] translate error:', msg)
       setError(msg)
-      if (sessionActiveRef.current) setState('ready')
+
+      // Incluso con error, en modo auto volver a escuchar
+      if (sessionActiveRef.current) {
+        if (autoModeRef.current) {
+          clearAutoRestartTimer()
+          autoRestartTimerRef.current = setTimeout(() => {
+            if (sessionActiveRef.current) startListeningInternal()
+          }, AUTO_RESTART_DELAY_MS)
+        } else {
+          setState('ready')
+        }
+      }
     } finally {
       isTranslatingRef.current = false
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speak])
 
-  // ── SpeechRecognition ─────────────────────────────────────────
+  // ── SpeechRecognition (función interna no expuesta) ────────────
 
   const buildRecognition = useCallback((): SpeechRecognition | null => {
     if (typeof window === 'undefined') return null
@@ -205,7 +310,7 @@ export function useInterpreter() {
     }
 
     const r = new SR()
-    // Reconocimiento en ambos idiomas — detectamos manualmente tras la transcripción
+    // lang 'es-ES' como base; el detectLang posterior maneja el idioma real
     r.lang = 'es-ES'
     r.continuous = false
     r.interimResults = true
@@ -220,7 +325,6 @@ export function useInterpreter() {
 
         const srcLang = detectLang(text)
 
-        // Agregar lo que dijo el usuario al transcript
         const userEntry: TranscriptEntry = {
           id: `${Date.now()}-user`,
           role: 'user',
@@ -230,7 +334,6 @@ export function useInterpreter() {
         }
         setTranscript(prev => [...prev, userEntry])
 
-        // Traducir
         translate(text, srcLang)
       } else {
         setInterimText(text)
@@ -239,13 +342,37 @@ export function useInterpreter() {
 
     r.onend = () => {
       if (!sessionActiveRef.current) return
-      if (!isTranslatingRef.current && !isSpeakingRef.current) {
+
+      // Si ya está traduciendo o hablando, el reinicio lo gestiona speak()/translate()
+      if (isTranslatingRef.current || isSpeakingRef.current) return
+
+      if (autoModeRef.current) {
+        // No había habla detectable → reiniciar con un debounce corto
+        clearAutoRestartTimer()
+        autoRestartTimerRef.current = setTimeout(() => {
+          if (sessionActiveRef.current && autoModeRef.current) {
+            startListeningInternal()
+          }
+        }, AUTO_LISTEN_DEBOUNCE_MS)
+      } else {
         setState('ready')
       }
     }
 
     r.onerror = (e: SpeechRecognitionErrorEvent) => {
-      if (e.error === 'no-speech' || e.error === 'aborted') return
+      if (e.error === 'no-speech') {
+        // En modo auto, reintentar silenciosamente
+        if (autoModeRef.current && sessionActiveRef.current) {
+          clearAutoRestartTimer()
+          autoRestartTimerRef.current = setTimeout(() => {
+            if (sessionActiveRef.current && autoModeRef.current) {
+              startListeningInternal()
+            }
+          }, AUTO_LISTEN_DEBOUNCE_MS)
+        }
+        return
+      }
+      if (e.error === 'aborted') return
       if (e.error === 'not-allowed') {
         setError('Permiso de micrófono denegado. Habilitalo en la configuración del navegador.')
         setState('error')
@@ -256,7 +383,38 @@ export function useInterpreter() {
     }
 
     return r
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [translate])
+
+  // ── startListeningInternal (no expuesto — usado por el ciclo auto) ──
+
+  // Usamos un ref de función para evitar dependencias circulares
+  const startListeningInternalRef = useRef<() => void>(() => {})
+
+  const startListeningInternal = useCallback(() => {
+    startListeningInternalRef.current()
+  }, [])
+
+  useEffect(() => {
+    startListeningInternalRef.current = () => {
+      if (!sessionActiveRef.current) return
+      if (isTranslatingRef.current || isSpeakingRef.current) return
+
+      const r = buildRecognition()
+      if (!r) return
+
+      recognitionRef.current?.abort()
+      recognitionRef.current = r
+
+      setState('listening')
+      try {
+        r.start()
+      } catch (e) {
+        console.warn('[useInterpreter] recognition.start error:', e)
+        setState('ready')
+      }
+    }
+  }, [buildRecognition])
 
   // ── Control de sesión ─────────────────────────────────────────
 
@@ -264,9 +422,15 @@ export function useInterpreter() {
     sessionActiveRef.current = true
     setError(null)
     setState('ready')
-  }, [])
+
+    // En modo auto, arrancar escuchando de inmediato
+    if (autoModeRef.current) {
+      setTimeout(() => startListeningInternal(), 300)
+    }
+  }, [startListeningInternal])
 
   const stopSession = useCallback(() => {
+    clearAutoRestartTimer()
     sessionActiveRef.current = false
     recognitionRef.current?.abort()
     recognitionRef.current = null
@@ -275,25 +439,12 @@ export function useInterpreter() {
     setState('idle')
   }, [])
 
-  // ── Control de micrófono ──────────────────────────────────────
+  // ── Control de micrófono (PTT manual) ──────────────────────────
 
   const startListening = useCallback(() => {
     if (state !== 'ready' || !sessionActiveRef.current) return
-
-    const r = buildRecognition()
-    if (!r) return
-
-    recognitionRef.current?.abort()
-    recognitionRef.current = r
-
-    setState('listening')
-    try {
-      r.start()
-    } catch (e) {
-      console.warn('[useInterpreter] recognition.start error:', e)
-      setState('ready')
-    }
-  }, [state, buildRecognition])
+    startListeningInternal()
+  }, [state, startListeningInternal])
 
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop()
@@ -325,9 +476,14 @@ export function useInterpreter() {
     setInterimText('')
   }, [])
 
+  const toggleAutoMode = useCallback(() => {
+    setAutoMode(prev => !prev)
+  }, [])
+
   // Cleanup al desmontar
   useEffect(() => {
     return () => {
+      clearAutoRestartTimer()
       recognitionRef.current?.abort()
       window.speechSynthesis?.cancel()
     }
@@ -339,6 +495,7 @@ export function useInterpreter() {
     transcript,
     interimText,
     error,
+    autoMode,
 
     // Voces
     availableVoices,
@@ -355,5 +512,6 @@ export function useInterpreter() {
     translateManual,
     clearTranscript,
     speak,
+    toggleAutoMode,
   }
 }

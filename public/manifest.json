@@ -1,24 +1,40 @@
 {
-  "name": "InterpreteAI — ES ↔ EN",
-  "short_name": "InterpreteAI",
-  "description": "Intérprete de voz en tiempo real Español ↔ English",
+  "id": "interprete-ai",
+  "name": "IntérpreteAI — ES ↔ EN",
+  "short_name": "Intérprete",
+  "description": "Intérprete de voz en tiempo real Español ↔ English. Dos personas, un celular, sin barreras.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0D0D0F",
   "theme_color": "#0D0D0F",
   "orientation": "portrait",
+  "lang": "es",
+  "categories": ["utilities", "productivity"],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
