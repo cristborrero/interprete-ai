@@ -27,9 +27,9 @@ Nuestro objetivo es romper las barreras idiomáticas de forma instantánea, prov
 *   **Dual Engine (Híbrido)**:
     *   **En Línea (Gemini Live API)**: Utiliza `gemini-2.5-flash-live` a través de un canal WebSockets bidireccional continuo para lograr traducciones de baja latencia y alta comprensión contextual.
     *   **Local (OPUS-MT Offline)**: Emplea modelos compactos de traducción de Helsinki-NLP (`Xenova/opus-mt-es-en` y `Xenova/opus-mt-en-es`) que corren localmente en el navegador a través de un Web Worker con **Transformers.js**. Los modelos se descargan la primera vez (~150MB) y quedan cacheados de forma persistente en **IndexedDB**.
-*   **Speech-to-Text & Text-to-Speech Fluido**:
+*   **Speech-to-Text & Text-to-Speech de Élite**:
     *   Captura de voz a través del micrófono usando Web Speech API nativa.
-    *   Sintetizador de voz integrado (TTS) con controles dinámicos de volumen y velocidad de habla directamente desde la interfaz.
+    *   Sintetizador de voz ultra-realista 100% Offline gracias a **Kokoro-82M** (`kokoro-js`), integrado en un Web Worker dedicado. Provee acentos nativos (Español e Inglés) superando con creces la calidad de las voces robóticas estándar de los navegadores.
 *   **Interfaz de Elite**:
     *   Diseño oscuro con estética Glassmorphism, relieve de luz y micro-animaciones fluidas (corona de luz verde esmeralda y respiración en el disparador de voz central).
     *   Editores de traducción interactivos con capacidad de edición manual e input por teclado.

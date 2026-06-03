@@ -19,7 +19,8 @@
 - [x] **Sistema de Diseño Premium**: Implementación de interfaz Glassmorphism en modo Dark exclusivo, sin emojis, uso estricto de iconos SVG.
 - [x] **Responsive Mobile-First**: Tab bar fija inferior para móviles, barra lateral adaptativa para tablets, layout de pantalla completa.
 - [x] **Branding Colors**: Mapeo estricto del manual de marca: Naranja (#FF600C), Rojo (#FF1300), grises neutros (#0F0F0F, #1A1A1A, #333333, #646464).
-- [x] **Optimización de Build**: Corrección de problemas de empaquetado de Web Workers forzando Webpack sobre Turbopack para máxima estabilidad offline.
+- [x] **Optimización de Build**: Transición a Webpack para soporte estable de Web Workers en Next.js.
+- [x] **Integración de Kokoro-82M**: Implementación de `kokoro-js` para síntesis de voz (TTS) ultra-realista 100% offline, reemplazando la Web Speech API nativa.
 
 ---
 
