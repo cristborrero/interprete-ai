@@ -99,6 +99,7 @@ interface PanelProps {
   isListening: boolean
   onTranslate: (text: string, from: Language) => void
   onSpeak: (text: string, lang: Language) => void
+  onSelect?: () => void
 }
 
 function TranslationPanel({ lang, lastEntry, interimText, isSource, isListening, onTranslate, onSpeak }: PanelProps) {
@@ -136,7 +137,11 @@ function TranslationPanel({ lang, lastEntry, interimText, isSource, isListening,
       ${isSource && isListening ? borderActive : 'border-neutral-700/60'}`}>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 shrink-0">
+      <div
+        onClick={onSelect}
+        className={`flex items-center justify-between px-4 py-3 border-b border-neutral-800 shrink-0 select-none
+          ${onSelect ? 'cursor-pointer hover:bg-neutral-800/20 active:bg-neutral-800/40' : ''}`}
+      >
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${dotColor} transition-opacity ${isSource && isListening ? 'animate-pulse opacity-100' : 'opacity-30'}`} />
           <span className="text-xs font-bold text-neutral-200 uppercase tracking-widest">
@@ -148,7 +153,7 @@ function TranslationPanel({ lang, lastEntry, interimText, isSource, isListening,
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
           {(editText.trim() || displayText) && (
             <>
               <button
@@ -225,6 +230,7 @@ export default function InterpreterApp() {
     interimText,
     error,
     autoMode,
+    activeListeningLang,
     availableVoices,
     esVoice,
     enVoice,
@@ -238,6 +244,7 @@ export default function InterpreterApp() {
     clearTranscript,
     speak,
     toggleAutoMode,
+    selectListeningLang,
   } = useInterpreter()
 
   const [showVoicePanel, setShowVoicePanel] = useState(false)
@@ -259,8 +266,10 @@ export default function InterpreterApp() {
       startSession()
       return
     }
-    // En modo auto el botón no hace nada al tocar (solo el stop session lo detiene)
-    if (!autoMode) {
+    // En modo auto, el botón central detiene la sesión (detiene la escucha/habla)
+    if (autoMode) {
+      stopSession()
+    } else {
       if (isListening) stopListening()
     }
   }
@@ -286,10 +295,10 @@ export default function InterpreterApp() {
     : 'bg-neutral-900 border-neutral-700 hover:border-orange-500/60 hover:bg-neutral-800 cursor-pointer'
 
   const orbLabel = isListening
-    ? (lastDetectedLang === 'en' ? 'Listening...' : 'Escuchando...')
+    ? (activeListeningLang === 'en' ? 'Listening...' : 'Escuchando...')
     : state === 'translating' ? 'Traduciendo...'
     : state === 'speaking'
-      ? (lastDetectedLang === 'es' ? 'Speaking in English...' : 'Hablando en español...')
+      ? (activeListeningLang === 'en' ? 'Speaking in English...' : 'Hablando en español...')
     : isActive && autoMode ? 'Modo automático activo'
     : isActive ? 'Mantén presionado para hablar'
     : 'Toca para iniciar'
@@ -434,10 +443,11 @@ export default function InterpreterApp() {
           lang="es"
           lastEntry={lastEs}
           interimText={interimText}
-          isSource={lastDetectedLang === 'es' || (isListening && lastDetectedLang === null)}
+          isSource={activeListeningLang === 'es'}
           isListening={isListening}
           onTranslate={translateManual}
           onSpeak={speak}
+          onSelect={isActive ? () => selectListeningLang('es') : undefined}
         />
 
         {/* Separador con indicador de dirección */}
@@ -468,10 +478,11 @@ export default function InterpreterApp() {
           lang="en"
           lastEntry={lastEn}
           interimText={interimText}
-          isSource={lastDetectedLang === 'en'}
+          isSource={activeListeningLang === 'en'}
           isListening={isListening}
           onTranslate={translateManual}
           onSpeak={speak}
+          onSelect={isActive ? () => selectListeningLang('en') : undefined}
         />
       </div>
 

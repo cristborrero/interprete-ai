@@ -73,6 +73,7 @@ export function useInterpreter() {
   const [interimText, setInterimText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [autoMode, setAutoMode] = useState(true)
+  const [activeListeningLang, setActiveListeningLang] = useState<Language>('es')
 
   // Voces disponibles del sistema
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
@@ -272,6 +273,7 @@ export function useInterpreter() {
         timestamp: new Date(),
       }
       setTranscript(prev => [...prev, entry])
+      setActiveListeningLang(toLang)
 
       if (sessionActiveRef.current) {
         speak(data.translation, toLang)
@@ -310,8 +312,8 @@ export function useInterpreter() {
     }
 
     const r = new SR()
-    // lang 'es-ES' como base; el detectLang posterior maneja el idioma real
-    r.lang = 'es-ES'
+    // Configuramos el idioma activo de escucha (ES o EN)
+    r.lang = activeListeningLang === 'es' ? 'es-ES' : 'en-US'
     r.continuous = false
     r.interimResults = true
     r.maxAlternatives = 1
@@ -323,7 +325,7 @@ export function useInterpreter() {
       if (result.isFinal && text.length > 1) {
         setInterimText('')
 
-        const srcLang = detectLang(text)
+        const srcLang = activeListeningLang
 
         const userEntry: TranscriptEntry = {
           id: `${Date.now()}-user`,
@@ -384,7 +386,7 @@ export function useInterpreter() {
 
     return r
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [translate])
+  }, [translate, activeListeningLang])
 
   // ── startListeningInternal (no expuesto — usado por el ciclo auto) ──
 
@@ -421,6 +423,7 @@ export function useInterpreter() {
   const startSession = useCallback(() => {
     sessionActiveRef.current = true
     setError(null)
+    setActiveListeningLang('es')
     setState('ready')
 
     // En modo auto, arrancar escuchando de inmediato
@@ -480,6 +483,13 @@ export function useInterpreter() {
     setAutoMode(prev => !prev)
   }, [])
 
+  const selectListeningLang = useCallback((lang: Language) => {
+    setActiveListeningLang(lang)
+    if (sessionActiveRef.current && recognitionRef.current) {
+      recognitionRef.current.abort()
+    }
+  }, [])
+
   // Cleanup al desmontar
   useEffect(() => {
     return () => {
@@ -496,6 +506,7 @@ export function useInterpreter() {
     interimText,
     error,
     autoMode,
+    activeListeningLang,
 
     // Voces
     availableVoices,
@@ -513,5 +524,6 @@ export function useInterpreter() {
     clearTranscript,
     speak,
     toggleAutoMode,
+    selectListeningLang,
   }
 }
