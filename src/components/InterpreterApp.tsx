@@ -102,7 +102,7 @@ interface PanelProps {
   onSelect?: () => void
 }
 
-function TranslationPanel({ lang, lastEntry, interimText, isSource, isListening, onTranslate, onSpeak }: PanelProps) {
+function TranslationPanel({ lang, lastEntry, interimText, isSource, isListening, onTranslate, onSpeak, onSelect }: PanelProps) {
   const [editText, setEditText] = useState('')
   const [copied, setCopied] = useState(false)
 
