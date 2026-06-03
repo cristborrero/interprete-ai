@@ -2,12 +2,23 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Transformers.js corre en el browser — no bundlear en el servidor
-  serverExternalPackages: ['@huggingface/transformers'],
+  // kokoro-js → onnxruntime-node tiene binarios nativos .node que no
+  // deben bundlearse. Se excluyen del bundle del servidor.
+  serverExternalPackages: [
+    '@huggingface/transformers',
+    'kokoro-js',
+    'onnxruntime-node',
+  ],
 
   // Webpack: soporte estable para new Worker(new URL(..., import.meta.url))
-  // Turbopack tiene soporte limitado para Workers con import.meta.url
   webpack(config) {
+    // Ignorar los binarios nativos .node que onnxruntime-node incluye
+    // para múltiples plataformas. Webpack no sabe parsearlos.
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'null-loader',
+    })
+
     return config
   },
 
