@@ -5,13 +5,13 @@
  * ─────────────────────────────────────────────────────────────────
  * Hook principal del intérprete simultáneo ES ↔ EN.
  *
- * STT  → Web Speech API (browser nativo, sin modelos pesados)
- * TTS  → window.speechSynthesis (voces del sistema, seleccionables)
+ * STT  → Azure AI Speech (con Language ID) o Web Speech API (fallback)
+ * TTS  → Azure Neural Voices o window.speechSynthesis (fallback)
  * MTx  → POST /api/translate (OpenRouter → gemini-3.1-flash-lite)
  *
  * Modos:
  *  - Manual (PTT): el usuario mantiene presionado para hablar
- *  - Auto: STT → traduce → TTS habla → STT vuelve a escuchar solo
+ *  - Auto: STT con Language ID → traduce → TTS habla → STT vuelve a escuchar solo
  * ─────────────────────────────────────────────────────────────────
  */
 
@@ -42,7 +42,7 @@ interface SpeechAwareWindow extends Window {
   webkitSpeechRecognition?: new () => SpeechRecognition
 }
 
-// ── Detección de idioma por heurística ────────────────────────────
+// ── Detección de idioma por heurística (fallback) ─────────────────
 
 export function detectLang(text: string): Language {
   const esMarkers = /\b(el|la|los|las|un|una|que|de|en|con|por|para|es|son|tiene|está|estoy|pero|como|cuando|también|más|me|mi|tu|su|no|sí|muy|bien|gracias|buenos|días|hola|quiero|tengo|necesito|puedo|hacer|este|eso|aquí|ahora|todo|nada|ya|hay|ser|por|favor)\b/gi
@@ -75,12 +75,13 @@ export function useInterpreter() {
   const [autoMode, setAutoMode] = useState(true)
   const [activeListeningLang, setActiveListeningLang] = useState<Language>('es')
 
-  // Voces disponibles del sistema
+  // Voces disponibles del sistema (para fallback nativo)
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
   const [esVoice, setEsVoice] = useState<SpeechSynthesisVoice | null>(null)
   const [enVoice, setEnVoice] = useState<SpeechSynthesisVoice | null>(null)
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const azureTokenRef = useRef<{ token: string; region: string } | null>(null)
+  const recognitionRef = useRef<any>(null)
   const sessionActiveRef = useRef(false)
   const autoModeRef = useRef(true)
   const isTranslatingRef = useRef(false)
@@ -101,7 +102,20 @@ export function useInterpreter() {
     }
   }
 
-  // ── Cargar voces del sistema ───────────────────────────────────
+  const fetchAzureToken = async () => {
+    try {
+      const res = await fetch('/api/azure-token')
+      if (!res.ok) throw new Error('Token fetch failed')
+      const data = await res.json()
+      azureTokenRef.current = data
+      return data
+    } catch (e) {
+      console.error('[useInterpreter] Failed to fetch Azure token:', e)
+      return null
+    }
+  }
+
+  // ── Cargar voces del sistema (fallback nativo) ──────────────────
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -160,13 +174,12 @@ export function useInterpreter() {
     }
   }, [])
 
-  // ── TTS ───────────────────────────────────────────────────────
+  // ── TTS (Síntesis de voz) ──────────────────────────────────────
 
-  const speak = useCallback((text: string, lang: Language, onEnd?: () => void) => {
-    if (typeof window === 'undefined') return
+  const speakNativeFallback = useCallback((text: string, lang: Language, onEnd?: () => void) => {
     const synth = window.speechSynthesis
     if (!synth || !window.SpeechSynthesisUtterance) {
-      console.warn('[useInterpreter] TTS no soportado en este navegador')
+      console.warn('[useInterpreter] TTS nativo no soportado')
       onEnd?.()
       if (sessionActiveRef.current) {
         if (autoModeRef.current) {
@@ -205,7 +218,6 @@ export function useInterpreter() {
         if (!sessionActiveRef.current) return
 
         if (autoModeRef.current) {
-          // En modo automático: volver a escuchar tras una pausa natural
           clearAutoRestartTimer()
           autoRestartTimerRef.current = setTimeout(() => {
             if (sessionActiveRef.current && autoModeRef.current) {
@@ -218,7 +230,7 @@ export function useInterpreter() {
       }
 
       utter.onerror = (e) => {
-        console.warn('[useInterpreter] TTS onerror:', e)
+        console.warn('[useInterpreter] Native TTS error:', e)
         isSpeakingRef.current = false
         if (sessionActiveRef.current) {
           if (autoModeRef.current) {
@@ -236,12 +248,83 @@ export function useInterpreter() {
 
       synth.speak(utter)
     } catch (e) {
-      console.error('[useInterpreter] TTS crash:', e)
+      console.error('[useInterpreter] Native TTS crash:', e)
       isSpeakingRef.current = false
       if (sessionActiveRef.current) setState('ready')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [esVoice, enVoice])
+
+  const speak = useCallback((text: string, lang: Language, onEnd?: () => void) => {
+    if (typeof window === 'undefined') return
+
+    const azureConfig = azureTokenRef.current
+    if (azureConfig && azureConfig.token) {
+      // Usar Azure TTS
+      import('microsoft-cognitiveservices-speech-sdk').then((SDK) => {
+        try {
+          const speechConfig = SDK.SpeechConfig.fromAuthorizationToken(azureConfig.token!, azureConfig.region!)
+          // Configurar voces neurales premium automáticas
+          speechConfig.speechSynthesisVoiceName = lang === 'es' ? 'es-CO-SalomeNeural' : 'en-GB-SoniaNeural'
+
+          const synthesizer = new SDK.SpeechSynthesizer(speechConfig)
+          
+          isSpeakingRef.current = true
+          setState('speaking')
+
+          synthesizer.speakTextAsync(
+            text,
+            result => {
+              isSpeakingRef.current = false
+              synthesizer.close()
+
+              if (result.reason === SDK.ResultReason.SynthesizingAudioCompleted) {
+                onEnd?.()
+
+                if (!sessionActiveRef.current) return
+
+                if (autoModeRef.current) {
+                  clearAutoRestartTimer()
+                  autoRestartTimerRef.current = setTimeout(() => {
+                    if (sessionActiveRef.current && autoModeRef.current) {
+                      startListeningInternal()
+                    }
+                  }, AUTO_RESTART_DELAY_MS)
+                } else {
+                  setState('ready')
+                }
+              } else {
+                console.warn('[useInterpreter] Azure TTS no completado:', result.errorDetails)
+                if (sessionActiveRef.current) {
+                  if (autoModeRef.current) {
+                    startListeningInternal()
+                  } else {
+                    setState('ready')
+                  }
+                }
+              }
+            },
+            err => {
+              console.error('[useInterpreter] Azure TTS error:', err)
+              isSpeakingRef.current = false
+              synthesizer.close()
+              if (sessionActiveRef.current) setState('ready')
+            }
+          )
+        } catch (e) {
+          console.error('[useInterpreter] Error configurando Azure TTS:', e)
+          isSpeakingRef.current = false
+          speakNativeFallback(text, lang, onEnd)
+        }
+      }).catch(err => {
+        console.error('[useInterpreter] Error cargando SDK de Azure para TTS:', err)
+        speakNativeFallback(text, lang, onEnd)
+      })
+    } else {
+      speakNativeFallback(text, lang, onEnd)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [speakNativeFallback])
 
   // ── Traducción via REST ───────────────────────────────────────
 
@@ -300,7 +383,7 @@ export function useInterpreter() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speak])
 
-  // ── SpeechRecognition (función interna no expuesta) ────────────
+  // ── SpeechRecognition (fallback nativo) ──────────────────────────
 
   const buildRecognition = useCallback((): SpeechRecognition | null => {
     if (typeof window === 'undefined') return null
@@ -312,8 +395,7 @@ export function useInterpreter() {
     }
 
     const r = new SR()
-    // Configuramos el idioma activo de escucha (ES o EN)
-    r.lang = activeListeningLang === 'es' ? 'es-ES' : 'en-US'
+    r.lang = activeListeningLang === 'es' ? 'es-ES' : 'en-GB'
     r.continuous = false
     r.interimResults = true
     r.maxAlternatives = 1
@@ -344,12 +426,9 @@ export function useInterpreter() {
 
     r.onend = () => {
       if (!sessionActiveRef.current) return
-
-      // Si ya está traduciendo o hablando, el reinicio lo gestiona speak()/translate()
       if (isTranslatingRef.current || isSpeakingRef.current) return
 
       if (autoModeRef.current) {
-        // No había habla detectable → reiniciar con un debounce corto
         clearAutoRestartTimer()
         autoRestartTimerRef.current = setTimeout(() => {
           if (sessionActiveRef.current && autoModeRef.current) {
@@ -363,7 +442,6 @@ export function useInterpreter() {
 
     r.onerror = (e: SpeechRecognitionErrorEvent) => {
       if (e.error === 'no-speech') {
-        // En modo auto, reintentar silenciosamente
         if (autoModeRef.current && sessionActiveRef.current) {
           clearAutoRestartTimer()
           autoRestartTimerRef.current = setTimeout(() => {
@@ -388,43 +466,156 @@ export function useInterpreter() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [translate, activeListeningLang])
 
-  // ── startListeningInternal (no expuesto — usado por el ciclo auto) ──
+  // ── startListeningInternal (ciclo de captura) ──────────────────
 
-  // Usamos un ref de función para evitar dependencias circulares
   const startListeningInternalRef = useRef<() => void>(() => {})
 
   const startListeningInternal = useCallback(() => {
     startListeningInternalRef.current()
   }, [])
 
-  useEffect(() => {
-    startListeningInternalRef.current = () => {
-      if (!sessionActiveRef.current) return
-      if (isTranslatingRef.current || isSpeakingRef.current) return
+  const fallbackToNativeRecognition = useCallback(() => {
+    const r = buildRecognition()
+    if (!r) return
 
-      const r = buildRecognition()
-      if (!r) return
-
-      recognitionRef.current?.abort()
-      recognitionRef.current = r
-
-      setState('listening')
+    if (recognitionRef.current) {
       try {
-        r.start()
-      } catch (e) {
-        console.warn('[useInterpreter] recognition.start error:', e)
-        setState('ready')
-      }
+        if (typeof recognitionRef.current.close === 'function') {
+          recognitionRef.current.close()
+        } else if (typeof recognitionRef.current.abort === 'function') {
+          recognitionRef.current.abort()
+        }
+      } catch (e) {}
+    }
+    recognitionRef.current = r
+
+    setState('listening')
+    try {
+      r.start()
+    } catch (e) {
+      console.warn('[useInterpreter] Native recognition start error:', e)
+      setState('ready')
     }
   }, [buildRecognition])
 
+  useEffect(() => {
+    startListeningInternalRef.current = async () => {
+      if (!sessionActiveRef.current) return
+      if (isTranslatingRef.current || isSpeakingRef.current) return
+
+      let azureConfig = azureTokenRef.current
+      if (!azureConfig) {
+        azureConfig = await fetchAzureToken()
+      }
+
+      if (azureConfig && azureConfig.token) {
+        try {
+          const SDK = await import('microsoft-cognitiveservices-speech-sdk')
+          const speechConfig = SDK.SpeechConfig.fromAuthorizationToken(azureConfig.token, azureConfig.region)
+          const audioConfig = SDK.AudioConfig.fromDefaultMicrophoneInput()
+
+          let recognizer: any
+          if (autoModeRef.current) {
+            // Auto detección bilingüe (español e inglés)
+            const autoDetectConfig = SDK.AutoDetectSourceLanguageConfig.fromLanguages(['es-ES', 'en-US'])
+            recognizer = SDK.SpeechRecognizer.FromConfig(speechConfig, autoDetectConfig, audioConfig)
+          } else {
+            // Modo manual (PTT): usar el idioma seleccionado activamente
+            speechConfig.speechRecognitionLanguage = activeListeningLang === 'es' ? 'es-ES' : 'en-US'
+            recognizer = new SDK.SpeechRecognizer(speechConfig, audioConfig)
+          }
+
+          if (recognitionRef.current) {
+            try {
+              recognitionRef.current.close()
+            } catch (e) {}
+          }
+          recognitionRef.current = recognizer
+
+          setState('listening')
+
+          recognizer.recognizing = (sender: any, event: any) => {
+            setInterimText(event.result.text || '')
+          }
+
+          recognizer.recognizeOnceAsync(
+            async (result: any) => {
+              recognizer.close()
+              if (recognitionRef.current === recognizer) {
+                recognitionRef.current = null
+              }
+
+              if (result.reason === SDK.ResultReason.RecognizedSpeech) {
+                setInterimText('')
+
+                let srcLang = activeListeningLang
+                if (autoModeRef.current) {
+                  const autoDetectResult = SDK.AutoDetectSourceLanguageResult.fromResult(result)
+                  srcLang = autoDetectResult.language.startsWith('es') ? 'es' : 'en'
+                }
+
+                const userEntry: TranscriptEntry = {
+                  id: `${Date.now()}-user`,
+                  role: 'user',
+                  text: result.text,
+                  lang: srcLang,
+                  timestamp: new Date(),
+                }
+                setTranscript(prev => [...prev, userEntry])
+                setActiveListeningLang(srcLang === 'es' ? 'en' : 'es')
+
+                await translate(result.text, srcLang)
+              } else {
+                setInterimText('')
+                if (sessionActiveRef.current) {
+                  if (autoModeRef.current) {
+                    clearAutoRestartTimer()
+                    autoRestartTimerRef.current = setTimeout(() => {
+                      if (sessionActiveRef.current && autoModeRef.current) {
+                        startListeningInternal()
+                      }
+                    }, AUTO_LISTEN_DEBOUNCE_MS)
+                  } else {
+                    setState('ready')
+                  }
+                }
+              }
+            },
+            (err: any) => {
+              console.error('[useInterpreter] Azure SpeechSDK error:', err)
+              recognizer.close()
+              if (recognitionRef.current === recognizer) {
+                recognitionRef.current = null
+              }
+              if (sessionActiveRef.current) {
+                if (autoModeRef.current) {
+                  startListeningInternal()
+                } else {
+                  setState('ready')
+                }
+              }
+            }
+          )
+        } catch (e) {
+          console.error('[useInterpreter] Fallo iniciando Azure Speech SDK, usando nativo:', e)
+          fallbackToNativeRecognition()
+        }
+      } else {
+        fallbackToNativeRecognition()
+      }
+    }
+  }, [activeListeningLang, translate, buildRecognition, fallbackToNativeRecognition])
+
   // ── Control de sesión ─────────────────────────────────────────
 
-  const startSession = useCallback(() => {
+  const startSession = useCallback(async () => {
     sessionActiveRef.current = true
     setError(null)
     setActiveListeningLang('es')
     setState('ready')
+
+    // Precargar el token de Azure
+    await fetchAzureToken()
 
     // En modo auto, arrancar escuchando de inmediato
     if (autoModeRef.current) {
@@ -435,8 +626,18 @@ export function useInterpreter() {
   const stopSession = useCallback(() => {
     clearAutoRestartTimer()
     sessionActiveRef.current = false
-    recognitionRef.current?.abort()
-    recognitionRef.current = null
+    
+    if (recognitionRef.current) {
+      try {
+        if (typeof recognitionRef.current.close === 'function') {
+          recognitionRef.current.close()
+        } else if (typeof recognitionRef.current.abort === 'function') {
+          recognitionRef.current.abort()
+        }
+      } catch (e) {}
+      recognitionRef.current = null
+    }
+
     window.speechSynthesis?.cancel()
     setInterimText('')
     setState('idle')
@@ -450,7 +651,15 @@ export function useInterpreter() {
   }, [state, startListeningInternal])
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop()
+    if (recognitionRef.current) {
+      try {
+        if (typeof recognitionRef.current.stop === 'function') {
+          recognitionRef.current.stop()
+        } else if (typeof recognitionRef.current.close === 'function') {
+          recognitionRef.current.close()
+        }
+      } catch (e) {}
+    }
     if (sessionActiveRef.current && !isTranslatingRef.current) {
       setState('ready')
     }
@@ -486,7 +695,13 @@ export function useInterpreter() {
   const selectListeningLang = useCallback((lang: Language) => {
     setActiveListeningLang(lang)
     if (sessionActiveRef.current && recognitionRef.current) {
-      recognitionRef.current.abort()
+      try {
+        if (typeof recognitionRef.current.close === 'function') {
+          recognitionRef.current.close()
+        } else if (typeof recognitionRef.current.abort === 'function') {
+          recognitionRef.current.abort()
+        }
+      } catch (e) {}
     }
   }, [])
 
@@ -494,7 +709,11 @@ export function useInterpreter() {
   useEffect(() => {
     return () => {
       clearAutoRestartTimer()
-      recognitionRef.current?.abort()
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.close()
+        } catch (e) {}
+      }
       window.speechSynthesis?.cancel()
     }
   }, [])
